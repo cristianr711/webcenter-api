@@ -76,7 +76,7 @@ app.get('/api/productos', async (req, res) => {
             LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
             WHERE p.estado = 1 ORDER BY p.id_producto DESC`);
         res.json(rows);
-    } catch (e) { res.status(500).json({ error: 'Error al cargar productos.' }); }
+    } catch (e) { res.status(500).json({ error: 'Error al cargar productos.', detail: e.message, code: e.code }); }
 });
 
 // Servir imagen desde TiDB (reemplaza Oracle Bucket)
