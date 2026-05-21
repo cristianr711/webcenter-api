@@ -6,7 +6,17 @@ const cors    = require('cors');
 const multer  = require('multer');
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
 app.use(express.json({ limit: '50mb' }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'CLAVE_SECRETA_WEBCENTER_2026';
@@ -71,11 +81,26 @@ app.get('/api/productos', async (req, res) => {
             SELECT p.id_producto, p.nombre, p.descripcion, p.precio_venta, p.stock_actual,
                    p.id_categoria, p.url_imagen,
                    (p.imagen_data IS NOT NULL) AS tiene_imagen,
-                   c.nombre AS categoria_nombre
+                   c.nombre AS categoria_nombre,
+                   GROUP_CONCAT(pi.id_imagen) AS extra_imagenes
             FROM productos p
             LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
-            WHERE p.estado = 1 ORDER BY p.id_producto DESC`);
-        res.json(rows);
+            LEFT JOIN producto_imagenes pi ON p.id_producto = pi.id_producto
+            WHERE p.estado = 1 
+            GROUP BY p.id_producto, c.nombre
+            ORDER BY p.id_producto DESC`);
+            
+        const BASE_URL = process.env.API_URL || 'https://webcenter-api.vercel.app/api';
+        const productos = rows.map(p => {
+            const imgs = [];
+            if (p.tiene_imagen) imgs.push(`${BASE_URL}/productos/${p.id_producto}/imagen`);
+            if (p.extra_imagenes) {
+                p.extra_imagenes.split(',').forEach(id => imgs.push(`${BASE_URL}/productos/${p.id_producto}/imagenes/${id}`));
+            }
+            if (imgs.length === 0 && p.url_imagen) imgs.push(p.url_imagen);
+            return { ...p, imagenes: imgs };
+        });
+        res.json(productos);
     } catch (e) { res.status(500).json({ error: 'Error al cargar productos.', detail: e.message, code: e.code }); }
 });
 
@@ -93,7 +118,20 @@ app.get('/api/productos/:id/imagen', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Error al cargar imagen.' }); }
 });
 
-app.post('/api/productos', upload.array('imagenes', 5), async (req, res) => {
+app.get('/api/productos/:id/imagenes/:imgId', async (req, res) => {
+    try {
+        const [rows] = await dbPool.execute(
+            'SELECT imagen_data, imagen_mime FROM producto_imagenes WHERE id_producto = ? AND id_imagen = ?',
+            [req.params.id, req.params.imgId]
+        );
+        if (!rows.length || !rows[0].imagen_data) return res.status(404).end();
+        res.setHeader('Content-Type', rows[0].imagen_mime || 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.send(rows[0].imagen_data);
+    } catch (e) { res.status(500).json({ error: 'Error al cargar imagen adicional.' }); }
+});
+
+app.post('/api/productos', upload.array('imagenes'), async (req, res) => {
     const { nombre, precio_venta, stock_actual, id_categoria, descripcion } = req.body;
     if (!nombre || !precio_venta) return res.status(400).json({ error: 'Nombre y precio son obligatorios.' });
     try {
@@ -104,8 +142,23 @@ app.post('/api/productos', upload.array('imagenes', 5), async (req, res) => {
              VALUES (?,?,?,0,?,?,?,?,1)`,
             [nombre, descripcion || '', precio_venta, stock_actual || 0, id_categoria || null, img, mime]
         );
-        res.status(201).json({ mensaje: 'Producto creado.', id: r.insertId });
-    } catch (e) { console.error(e); res.status(500).json({ error: 'Error al crear producto.' }); }
+        
+        const productId = r.insertId;
+        
+        // Insert extra images into producto_imagenes table
+        if (req.files && req.files.length > 1) {
+            for (let i = 1; i < req.files.length; i++) {
+                const extraImg = req.files[i].buffer;
+                const extraMime = req.files[i].mimetype;
+                await dbPool.execute(
+                    'INSERT INTO producto_imagenes (id_producto, imagen_data, imagen_mime) VALUES (?,?,?)',
+                    [productId, extraImg, extraMime]
+                );
+            }
+        }
+        
+        res.status(201).json({ mensaje: 'Producto creado.', id: productId });
+    } catch (e) { console.error(e); res.status(500).json({ error: 'Error al crear producto.', detail: e.message }); }
 });
 
 app.put('/api/productos/:id', async (req, res) => {
@@ -119,33 +172,50 @@ app.put('/api/productos/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Error al actualizar.' }); }
 });
 
-app.delete('/api/productos/:id', async (req, res) => {
+app.post('/api/productos/:id/delete', async (req, res) => {
+    const id = req.params.id;
     try {
-        await dbPool.execute('UPDATE productos SET estado=0 WHERE id_producto=?', [req.params.id]);
+        const [result] = await dbPool.execute('UPDATE productos SET estado=0 WHERE id_producto=?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ error: 'Producto no encontrado.' });
         res.json({ mensaje: 'Producto eliminado.' });
-    } catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
+    } catch (e) { res.status(500).json({ error: 'Error al eliminar.', detail: e.message }); }
+});
+
+app.delete('/api/productos/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        await dbPool.execute('UPDATE productos SET estado=0 WHERE id_producto=?', [id]);
+        res.json({ mensaje: 'Producto eliminado.' });
+    } catch (e) { res.status(500).json({ error: 'Error al eliminar.', detail: e.message }); }
 });
 
 // ── CATEGORIAS ─────────────────────────────────────────────────────────────
 app.get('/api/categorias', async (_, res) => {
     try { res.json((await dbPool.execute('SELECT * FROM categorias ORDER BY nombre'))[0]); }
-    catch (e) { res.status(500).json({ error: 'Error al cargar categorías.' }); }
+    catch (e) { res.status(500).json({ error: 'Error al cargar categorías.', detail: e.message }); }
 });
 app.post('/api/categorias', async (req, res) => {
-    const { nombre, descripcion } = req.body;
+    const { nombre, descripcion, emoji } = req.body;
     if (!nombre) return res.status(400).json({ error: 'Nombre obligatorio.' });
     try {
-        const [r] = await dbPool.execute('INSERT INTO categorias (nombre,descripcion) VALUES (?,?)', [nombre, descripcion || '']);
+        const [r] = await dbPool.execute('INSERT INTO categorias (nombre,descripcion,emoji) VALUES (?,?,?)', [nombre, descripcion || '', emoji || '']);
         res.status(201).json({ mensaje: 'Categoría creada.', id: r.insertId });
-    } catch (e) { res.status(500).json({ error: 'Error al crear.' }); }
+    } catch (e) { res.status(500).json({ error: 'Error al crear.', detail: e.message }); }
 });
 app.put('/api/categorias/:id', async (req, res) => {
     try {
-        await dbPool.execute('UPDATE categorias SET nombre=?,descripcion=? WHERE id_categoria=?',
-            [req.body.nombre, req.body.descripcion || '', req.params.id]);
+        await dbPool.execute('UPDATE categorias SET nombre=?,descripcion=?,emoji=? WHERE id_categoria=?',
+            [req.body.nombre, req.body.descripcion || '', req.body.emoji || '', req.params.id]);
         res.json({ mensaje: 'Actualizada.' });
     } catch (e) { res.status(500).json({ error: 'Error al actualizar.' }); }
 });
+app.post('/api/categorias/:id/delete', async (req, res) => {
+    try {
+        await dbPool.execute('DELETE FROM categorias WHERE id_categoria=?', [req.params.id]);
+        res.json({ mensaje: 'Eliminada.' });
+    } catch (e) { res.status(500).json({ error: 'Error al eliminar.', detail: e.message }); }
+});
+
 app.delete('/api/categorias/:id', async (req, res) => {
     try { await dbPool.execute('DELETE FROM categorias WHERE id_categoria=?', [req.params.id]); res.json({ mensaje: 'Eliminada.' }); }
     catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
@@ -154,7 +224,7 @@ app.delete('/api/categorias/:id', async (req, res) => {
 // ── CLIENTES ───────────────────────────────────────────────────────────────
 app.get('/api/clientes', async (_, res) => {
     try { res.json((await dbPool.execute('SELECT * FROM clientes ORDER BY nombre_completo'))[0]); }
-    catch (e) { res.status(500).json({ error: 'Error al cargar clientes.' }); }
+    catch (e) { res.status(500).json({ error: 'Error al cargar clientes.', detail: e.message }); }
 });
 app.post('/api/clientes', async (req, res) => {
     const { documento, nombre_completo, telefono, direccion } = req.body;
@@ -178,6 +248,10 @@ app.put('/api/clientes/:id', async (req, res) => {
         res.json({ mensaje: 'Cliente actualizado.' });
     } catch (e) { res.status(500).json({ error: 'Error al actualizar.' }); }
 });
+app.post('/api/clientes/:id/delete', async (req, res) => {
+    try { await dbPool.execute('DELETE FROM clientes WHERE id_cliente=?', [req.params.id]); res.json({ mensaje: 'Eliminado.' }); }
+    catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
+});
 app.delete('/api/clientes/:id', async (req, res) => {
     try { await dbPool.execute('DELETE FROM clientes WHERE id_cliente=?', [req.params.id]); res.json({ mensaje: 'Eliminado.' }); }
     catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
@@ -186,7 +260,7 @@ app.delete('/api/clientes/:id', async (req, res) => {
 // ── PROVEEDORES ────────────────────────────────────────────────────────────
 app.get('/api/proveedores', async (_, res) => {
     try { res.json((await dbPool.execute('SELECT * FROM proveedores ORDER BY nombre_razon_social'))[0]); }
-    catch (e) { res.status(500).json({ error: 'Error al cargar proveedores.' }); }
+    catch (e) { res.status(500).json({ error: 'Error al cargar proveedores.', detail: e.message }); }
 });
 app.post('/api/proveedores', async (req, res) => {
     const { nit_documento, nombre_razon_social, email, telefono, direccion } = req.body;
@@ -209,6 +283,10 @@ app.put('/api/proveedores/:id', async (req, res) => {
             [nit_documento, nombre_razon_social, email || '', telefono || '', direccion || '', req.params.id]);
         res.json({ mensaje: 'Proveedor actualizado.' });
     } catch (e) { res.status(500).json({ error: 'Error al actualizar.' }); }
+});
+app.post('/api/proveedores/:id/delete', async (req, res) => {
+    try { await dbPool.execute('DELETE FROM proveedores WHERE id_proveedor=?', [req.params.id]); res.json({ mensaje: 'Eliminado.' }); }
+    catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
 });
 app.delete('/api/proveedores/:id', async (req, res) => {
     try { await dbPool.execute('DELETE FROM proveedores WHERE id_proveedor=?', [req.params.id]); res.json({ mensaje: 'Eliminado.' }); }
@@ -251,6 +329,10 @@ app.put('/api/usuarios/:id', async (req, res) => {
         }
         res.json({ mensaje: 'Usuario actualizado.' });
     } catch (e) { res.status(500).json({ error: 'Error al actualizar.' }); }
+});
+app.post('/api/usuarios/:id/delete', async (req, res) => {
+    try { await dbPool.execute('DELETE FROM usuarios WHERE id_usuario=?', [req.params.id]); res.json({ mensaje: 'Eliminado.' }); }
+    catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
 });
 app.delete('/api/usuarios/:id', async (req, res) => {
     try { await dbPool.execute('UPDATE usuarios SET estado=0 WHERE id_usuario=?', [req.params.id]); res.json({ mensaje: 'Desactivado.' }); }
