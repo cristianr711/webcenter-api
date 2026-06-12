@@ -37,7 +37,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 // ── HEALTH ─────────────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) =>
-    res.json({ status: 'OK', version: '2.1', storage: 'TiDB Cloud', oracle: 'eliminado', emoji_support: 'active' })
+    res.json({ status: 'OK', version: '2.1', storage: 'TiDB Cloud', oracle: 'eliminado', emoji_support: 'active', newEndpoints: 'historial_precios_and_facturas' })
 );
 
 // ── AUTH ───────────────────────────────────────────────────────────────────
