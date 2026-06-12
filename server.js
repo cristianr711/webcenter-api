@@ -419,7 +419,7 @@ app.delete('/api/compras/:id', async (req, res) => {
     catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
 });
 
-// ── HISTORIAL DE PRECIOS ───────────────────────────────────────────────────
+// HISTORIAL DE PRECIOS
 app.get('/api/historial-precios', async (req, res) => {
     try {
         const [data] = await dbPool.execute(`
@@ -458,7 +458,7 @@ app.post('/api/historial-precios', async (req, res) => {
     }
 });
 
-// ── FACTURACIÓN ────────────────────────────────────────────────────────────
+// FACTURACION
 app.get('/api/facturas', async (req, res) => {
     try {
         const [data] = await dbPool.execute(`
