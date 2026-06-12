@@ -191,7 +191,10 @@ app.delete('/api/productos/:id', async (req, res) => {
 
 // ── CATEGORIAS ─────────────────────────────────────────────────────────────
 app.get('/api/categorias', async (_, res) => {
-    try { res.json((await dbPool.execute('SELECT * FROM categorias ORDER BY nombre'))[0]); }
+    try { 
+        console.log('[DIAGNOSTIC] Categorias endpoint called - testing Vercel update');
+        res.json((await dbPool.execute('SELECT * FROM categorias ORDER BY nombre'))[0]); 
+    }
     catch (e) { res.status(500).json({ error: 'Error al cargar categorías.', detail: e.message }); }
 });
 app.post('/api/categorias', async (req, res) => {
