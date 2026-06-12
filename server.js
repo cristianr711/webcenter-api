@@ -419,6 +419,112 @@ app.delete('/api/compras/:id', async (req, res) => {
     catch (e) { res.status(500).json({ error: 'Error al eliminar.' }); }
 });
 
+// ── HISTORIAL DE PRECIOS ───────────────────────────────────────────────────
+app.get('/api/historial-precios', async (req, res) => {
+    try {
+        const [data] = await dbPool.execute(`
+            SELECT h.*, p.nombre as nombre_producto, u.nombre_completo as nombre_usuario
+            FROM historial_precios h
+            LEFT JOIN productos p ON h.id_producto = p.id_producto
+            LEFT JOIN usuarios u ON h.id_usuario = u.id_usuario
+            ORDER BY h.fecha_cambio DESC
+            LIMIT 100
+        `);
+        res.json(data);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al obtener historial.' });
+    }
+});
+
+app.post('/api/historial-precios', async (req, res) => {
+    try {
+        const { id_producto, id_usuario, precio_anterior, precio_nuevo } = req.body;
+        
+        if (!id_producto || !precio_anterior || !precio_nuevo) {
+            return res.status(400).json({ error: 'Datos incompletos.' });
+        }
+
+        await dbPool.execute(
+            `INSERT INTO historial_precios (id_producto, id_usuario, precio_anterior, precio_nuevo)
+             VALUES (?, ?, ?, ?)`,
+            [id_producto, id_usuario, precio_anterior, precio_nuevo]
+        );
+
+        res.status(201).json({ mensaje: 'Cambio de precio registrado.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al registrar cambio de precio.' });
+    }
+});
+
+// ── FACTURACIÓN ────────────────────────────────────────────────────────────
+app.get('/api/facturas', async (req, res) => {
+    try {
+        const [data] = await dbPool.execute(`
+            SELECT f.*, c.nombre_completo as nombre_cliente
+            FROM facturas f
+            LEFT JOIN clientes c ON f.id_cliente = c.id_cliente
+            ORDER BY f.fecha_emision DESC
+            LIMIT 100
+        `);
+        res.json(data);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al obtener facturas.' });
+    }
+});
+
+app.post('/api/facturas', async (req, res) => {
+    const conn = await dbPool.getConnection();
+    try {
+        const { id_cliente, id_usuario, numero_factura, productos, subtotal, impuesto, total, metodo_pago } = req.body;
+        
+        if (!id_cliente || !numero_factura || !productos || productos.length === 0) {
+            return res.status(400).json({ error: 'Datos incompletos.' });
+        }
+
+        await conn.beginTransaction();
+
+        // Insertar factura
+        const [facturaResult] = await conn.execute(
+            `INSERT INTO facturas (id_cliente, id_usuario, numero_factura, subtotal, impuesto, total, metodo_pago, estado_factura)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'emitida')`,
+            [id_cliente, id_usuario, numero_factura, subtotal, impuesto, total, metodo_pago]
+        );
+
+        const facturaId = facturaResult.insertId;
+
+        // Insertar detalles de factura
+        for (const prod of productos) {
+            const subtotalProd = prod.cantidad * prod.precio_unitario;
+            await conn.execute(
+                `INSERT INTO detalles_factura (id_factura, id_producto, cantidad, precio_unitario, subtotal)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [facturaId, prod.id_producto, prod.cantidad, prod.precio_unitario, subtotalProd]
+            );
+        }
+
+        await conn.commit();
+
+        res.status(201).json({ 
+            mensaje: 'Factura creada exitosamente.',
+            id_factura: facturaId, 
+            numero_factura 
+        });
+    } catch (err) {
+        await conn.rollback();
+        console.error(err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ error: 'El número de factura ya existe.' });
+        } else {
+            res.status(500).json({ error: 'Error al crear factura.' });
+        }
+    } finally {
+        conn.release();
+    }
+});
+
 // ── START ──────────────────────────────────────────────────────────────────
 // Modo local: arranca el servidor normal
 // Modo Vercel: exporta el app como función serverless
