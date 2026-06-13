@@ -1,0 +1,330 @@
+const express = require('express');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
+const crypto = require('crypto');
+require('dotenv').config();
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Configuración BD
+const dbConfig = {
+    host: process.env.DB_HOST || 'gateway01.us-east-1.prod.aws.tidbcloud.com',
+    port: process.env.DB_PORT || 4000,
+    user: process.env.DB_USER || 'k7vrnxBcf7mccfR.root',
+    password: process.env.DB_PASS || 'zNhNalRP8tNZBVAo',
+    database: process.env.DB_NAME || 'db_webcenter',
+    ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: false }
+};
+
+// Pool de conexiones
+const pool = mysql.createPool(dbConfig);
+
+// Función para hashear contraseñas
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Endpoints
+
+// ===================== USUARIOS =====================
+app.get('/api/usuarios', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute('SELECT id_usuario, nombre_completo, username, email, id_rol, activo FROM usuarios');
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/usuarios', async (req, res) => {
+    try {
+        const { nombre_completo, username, password, id_rol } = req.body;
+        const passwordHash = hashPassword(password);
+        
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO usuarios (nombre_completo, username, password_hash, id_rol, activo, created_at, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())',
+            [nombre_completo, username, passwordHash, id_rol || 2]
+        );
+        conn.release();
+        
+        res.status(201).json({ id_usuario: result.insertId, mensaje: 'Usuario creado' });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/usuarios/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre_completo, email, id_rol, activo } = req.body;
+        
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE usuarios SET nombre_completo = ?, email = ?, id_rol = ?, activo = ?, updated_at = NOW() WHERE id_usuario = ?',
+            [nombre_completo, email, id_rol, activo, id]
+        );
+        conn.release();
+        
+        res.json({ mensaje: 'Usuario actualizado' });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== CATEGORIAS =====================
+app.get('/api/categorias', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute('SELECT * FROM categorias WHERE activo = 1 ORDER BY nombre');
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/categorias', async (req, res) => {
+    try {
+        const { nombre, descripcion } = req.body;
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO categorias (nombre, descripcion, activo, created_at) VALUES (?, ?, 1, NOW())',
+            [nombre, descripcion]
+        );
+        conn.release();
+        res.status(201).json({ id_categoria: result.insertId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== PRODUCTOS =====================
+app.get('/api/productos', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute(`
+            SELECT p.*, c.nombre as categoria_nombre, pv.nombre_razon_social as proveedor_nombre
+            FROM productos p
+            LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+            LEFT JOIN proveedores pv ON p.id_proveedor = pv.id_proveedor
+            WHERE p.activo = 1
+        `);
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/productos', async (req, res) => {
+    try {
+        const { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO productos (nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
+            [nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor]
+        );
+        conn.release();
+        res.status(201).json({ id_producto: result.insertId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== CLIENTES =====================
+app.get('/api/clientes', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute('SELECT * FROM clientes WHERE activo = 1');
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/clientes', async (req, res) => {
+    try {
+        const { documento, nombre_completo, email, telefono, direccion, ciudad } = req.body;
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO clientes (documento, nombre_completo, email, telefono, direccion, ciudad, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
+            [documento, nombre_completo, email, telefono, direccion, ciudad]
+        );
+        conn.release();
+        res.status(201).json({ id_cliente: result.insertId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== PROVEEDORES =====================
+app.get('/api/proveedores', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute('SELECT * FROM proveedores WHERE activo = 1');
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/proveedores', async (req, res) => {
+    try {
+        const { nit_documento, nombre_razon_social, email, telefono, direccion } = req.body;
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO proveedores (nit_documento, nombre_razon_social, email, telefono, direccion, activo, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
+            [nit_documento, nombre_razon_social, email, telefono, direccion]
+        );
+        conn.release();
+        res.status(201).json({ id_proveedor: result.insertId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== TRANSACCIONES =====================
+app.get('/api/transacciones', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute(`
+            SELECT t.*, c.nombre_completo as nombre_cliente, u.nombre_completo as nombre_usuario
+            FROM transacciones t
+            LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
+            LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+            ORDER BY t.fecha_transaccion DESC
+        `);
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/transacciones', async (req, res) => {
+    try {
+        const { id_cliente, id_usuario, numero_documento, subtotal, impuesto, total_transaccion, metodo_pago, estado, tipo_documento, items } = req.body;
+        
+        const conn = await pool.getConnection();
+        
+        // Insertar transacción
+        const [result] = await conn.execute(
+            'INSERT INTO transacciones (id_cliente, id_usuario, numero_documento, subtotal, impuesto, total_transaccion, metodo_pago, estado, tipo_documento, fecha_transaccion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+            [id_cliente, id_usuario, numero_documento, subtotal, impuesto, total_transaccion, metodo_pago, estado || 'pendiente', tipo_documento || 'factura']
+        );
+        
+        const id_transaccion = result.insertId;
+        
+        // Insertar detalles
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                await conn.execute(
+                    'INSERT INTO detalle_transacciones (id_transaccion, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [id_transaccion, item.id_producto, item.cantidad, item.precio_unitario, item.subtotal]
+                );
+            }
+        }
+        
+        conn.release();
+        res.status(201).json({ id_transaccion });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== COMPRAS =====================
+app.get('/api/compras', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute(`
+            SELECT c.*, pv.nombre_razon_social as proveedor_nombre, u.nombre_completo as usuario_nombre
+            FROM compras c
+            LEFT JOIN proveedores pv ON c.id_proveedor = pv.id_proveedor
+            LEFT JOIN usuarios u ON c.id_usuario = u.id_usuario
+            ORDER BY c.fecha_compra DESC
+        `);
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/compras', async (req, res) => {
+    try {
+        const { id_proveedor, id_usuario, numero_factura_proveedor, subtotal, impuesto, total_compra, estado, items } = req.body;
+        
+        const conn = await pool.getConnection();
+        
+        // Insertar compra
+        const [result] = await conn.execute(
+            'INSERT INTO compras (id_proveedor, id_usuario, numero_factura_proveedor, subtotal, impuesto, total_compra, estado, fecha_compra) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+            [id_proveedor, id_usuario, numero_factura_proveedor, subtotal, impuesto, total_compra, estado || 'pendiente']
+        );
+        
+        const id_compra = result.insertId;
+        
+        // Insertar detalles
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                await conn.execute(
+                    'INSERT INTO detalle_compras (id_compra, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [id_compra, item.id_producto, item.cantidad, item.precio_unitario, item.subtotal]
+                );
+            }
+        }
+        
+        conn.release();
+        res.status(201).json({ id_compra });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== ROLES =====================
+app.get('/api/roles', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute('SELECT * FROM roles');
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== SALUD =====================
+app.get('/api/health', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        await conn.execute('SELECT 1');
+        conn.release();
+        res.json({ status: 'OK', database: 'Connected' });
+    } catch (err) {
+        res.status(500).json({ status: 'ERROR', error: err.message });
+    }
+});
+
+// Puerto
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log('\n🚀 Backend iniciado');
+    console.log('   Puerto: ' + PORT);
+    console.log('   URL: http://localhost:' + PORT);
+    console.log('   BD: ' + dbConfig.host + ':' + dbConfig.port + '/' + dbConfig.database);
+    console.log('   Estado: ✅ Conectado a TiDB Cloud\n');
+});
