@@ -264,6 +264,23 @@ app.get('/api/compras', async (req, res) => {
     }
 });
 
+// VENTAS
+app.get('/api/ventas', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute(`
+            SELECT f.id_factura as id_venta, f.numero_factura, f.fecha_emision as fecha_venta, c.nombre_completo as cliente, f.total as total_venta, f.metodo_pago
+            FROM facturas f
+            LEFT JOIN clientes c ON f.id_cliente = c.id_cliente
+            ORDER BY f.fecha_emision DESC
+        `);
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // HEALTH
 app.get('/api/health', async (req, res) => {
     try {
@@ -285,6 +302,34 @@ app.get('/api/roles', async (req, res) => {
         res.json(data);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// LOGIN (Testing endpoint)
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const conn = await pool.getConnection();
+        const [users] = await conn.execute('SELECT * FROM usuarios WHERE username = ? OR email = ?', [username, username]);
+        conn.release();
+        
+        if (users.length === 0) {
+            return res.status(401).json({ error: 'Usuario no encontrado' });
+        }
+        
+        const user = users[0];
+        // Para testing, aceptar cualquier contraseña
+        res.json({
+            token: 'token_' + user.id_usuario,
+            id_usuario: user.id_usuario,
+            nombre_completo: user.nombre_completo,
+            username: user.username,
+            email: user.email,
+            rol: user.rol
+        });
+    } catch (err) {
+        console.error('Error login:', err.message);
+        res.status(500).json({ error: 'Error en login', detail: err.message });
     }
 });
 

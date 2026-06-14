@@ -984,7 +984,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://webcenter-api.vercel.app/api';
+        const API_URL = 'http://localhost:5000/api';
         let currentEditId = null;
         let tempItems = [];
         let allProds = [];
@@ -1336,9 +1336,20 @@
             }
         }
 
+        async function safeFetch(url) {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                return Array.isArray(data) ? data : [];
+            } catch (err) {
+                console.error('safeFetch error:', err);
+                return [];
+            }
+        }
+
         async function loadProductos() {
-            const res = await fetch(`${API_URL}/productos?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/productos?t=${Date.now()}`);
             const tbody = document.getElementById('table-productos');
             if (tbody) tbody.innerHTML = data.map(p => `
                 <tr>
@@ -1355,8 +1366,7 @@
         }
 
         async function loadCategorias() {
-            const res = await fetch(`${API_URL}/categorias?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/categorias?t=${Date.now()}`);
             const tbody = document.getElementById('table-categorias');
             if (tbody) tbody.innerHTML = data.map(c => `
                 <tr>
@@ -1373,8 +1383,7 @@
         }
 
         async function loadClientes() {
-            const res = await fetch(`${API_URL}/clientes?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/clientes?t=${Date.now()}`);
             const tbody = document.getElementById('table-clientes');
             if (tbody) tbody.innerHTML = data.map(c => `
                 <tr>
@@ -1391,8 +1400,7 @@
         }
 
         async function loadProveedores() {
-            const res = await fetch(`${API_URL}/proveedores?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/proveedores?t=${Date.now()}`);
             const tbody = document.getElementById('table-proveedores');
             if (tbody) tbody.innerHTML = data.map(p => `
                 <tr>
@@ -1409,8 +1417,7 @@
         }
 
         async function loadUsuarios() {
-            const res = await fetch(`${API_URL}/usuarios?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/usuarios?t=${Date.now()}`);
             const tbody = document.getElementById('table-usuarios');
             if (tbody) tbody.innerHTML = data.map(u => `
                 <tr>
@@ -1426,8 +1433,7 @@
         }
 
         async function loadVentas() {
-            const res = await fetch(`${API_URL}/ventas?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/ventas?t=${Date.now()}`);
             const tbody = document.getElementById('table-ventas');
             if (tbody) tbody.innerHTML = data.map(v => `
                 <tr>
@@ -1445,8 +1451,7 @@
         }
 
         async function loadCompras() {
-            const res = await fetch(`${API_URL}/compras?t=${Date.now()}`);
-            const data = await res.json();
+            const data = await safeFetch(`${API_URL}/compras?t=${Date.now()}`);
             const tbody = document.getElementById('table-compras');
             if (tbody) tbody.innerHTML = data.map(c => `
                 <tr>
