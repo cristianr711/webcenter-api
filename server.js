@@ -113,10 +113,6 @@ app.post('/api/categorias', async (req, res) => {
 
 // ===================== PRODUCTOS =====================
 app.get('/api/productos', async (req, res) => {
-    // TEMP TEST: Return hardcoded response to verify code execution
-    res.json([{ id_producto: 999, nombre: 'TEST RESPONSE - Server.js updated' }]);
-    return;
-    
     try {
         const conn = await pool.getConnection();
         const [data] = await conn.execute(`

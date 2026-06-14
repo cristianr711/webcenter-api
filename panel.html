@@ -1565,10 +1565,27 @@
 
         async function loadStats() {
             try {
-                const rP = await fetch(`${API_URL}/productos?t=${Date.now()}`); const p = await rP.json();
-                const elP = document.getElementById('dash-prod-count'); if (elP) elP.innerText = p.length;
-                const rC = await fetch(`${API_URL}/clientes?t=${Date.now()}`); const cl = await rC.json();
-                const elC = document.getElementById('dash-cli-count'); if (elC) elC.innerText = cl.length;
+                const rP = await fetch(`${API_URL}/productos?t=${Date.now()}`);
+                const p = await rP.json();
+                const elP = document.getElementById('dash-prod-count');
+                if (elP) {
+                    if (Array.isArray(p)) {
+                        elP.innerText = p.length;
+                    } else {
+                        elP.innerText = '0';
+                    }
+                }
+                
+                const rC = await fetch(`${API_URL}/clientes?t=${Date.now()}`);
+                const cl = await rC.json();
+                const elC = document.getElementById('dash-cli-count');
+                if (elC) {
+                    if (Array.isArray(cl)) {
+                        elC.innerText = cl.length;
+                    } else {
+                        elC.innerText = '0';
+                    }
+                }
             } catch (e) { }
         }
 
