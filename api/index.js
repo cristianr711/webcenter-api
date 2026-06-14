@@ -189,11 +189,12 @@ app.post('/api/clientes', async (req, res) => {
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
             'INSERT INTO clientes (documento, nombre_completo, email, telefono, direccion, ciudad, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
-            [documento, nombre_completo, email, telefono, direccion, ciudad]
+            [documento || '', nombre_completo || '', email || null, telefono || '', direccion || '', ciudad || null]
         );
         conn.release();
         res.status(201).json({ id_cliente: result.insertId });
     } catch (err) {
+        console.error('Error POST clientes:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -205,11 +206,12 @@ app.put('/api/clientes/:id', async (req, res) => {
         const conn = await pool.getConnection();
         await conn.execute(
             'UPDATE clientes SET documento = ?, nombre_completo = ?, email = ?, telefono = ?, direccion = ?, ciudad = ?, updated_at = NOW() WHERE id_cliente = ?',
-            [documento || '', nombre_completo || '', email || '', telefono || '', direccion || '', ciudad || '', id]
+            [documento || '', nombre_completo || '', email || null, telefono || '', direccion || '', ciudad || null, id]
         );
         conn.release();
         res.json({ mensaje: 'Cliente actualizado' });
     } catch (err) {
+        console.error('Error PUT clientes:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

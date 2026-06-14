@@ -1530,8 +1530,11 @@
             const dir = document.getElementById('cli-dir').value;
             const url = currentEditId ? `${API_URL}/clientes/${currentEditId}` : `${API_URL}/clientes`;
             const method = currentEditId ? 'PUT' : 'POST';
-            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documento: doc, nombre_completo: nom, telefono: tel, direccion: dir }) });
-            if (res.ok) { showToast("Cliente guardado"); closeModal('cliente'); loadData(); }
+            try {
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documento: doc, nombre_completo: nom, telefono: tel, direccion: dir }) });
+                if (res.ok) { showToast("Cliente guardado"); closeModal('cliente'); loadData(); }
+                else { const error = await res.json(); showToast(error.error || "Error", "error"); }
+            } catch (e) { showToast("Error de conexión", "error"); }
         }
 
         async function saveProveedor() {
