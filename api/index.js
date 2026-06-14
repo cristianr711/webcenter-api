@@ -315,7 +315,7 @@ app.post('/api/proveedores/:id/delete', async (req, res) => {
 app.get('/api/usuarios', async (req, res) => {
     try {
         const conn = await pool.getConnection();
-        const [data] = await conn.execute('SELECT u.id_usuario, u.nombre_completo, u.username, u.email, u.id_rol, u.activo, r.nombre as rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id_rol');
+        const [data] = await conn.execute('SELECT u.id_usuario, u.nombre_completo, u.username, u.email, u.id_rol, u.activo, r.nombre as rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id_rol WHERE u.activo = 1');
         conn.release();
         res.json(data);
     } catch (err) {
