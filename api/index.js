@@ -188,7 +188,7 @@ app.post('/api/clientes', async (req, res) => {
         const { documento, nombre_completo, email, telefono, direccion, ciudad } = req.body;
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
-            'INSERT INTO clientes (documento, nombre_completo, email, telefono, direccion, ciudad, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
+            'INSERT INTO clientes (documento, nombre_completo, email, telefono, direccion, ciudad, activo) VALUES (?, ?, ?, ?, ?, ?, 1)',
             [documento || '', nombre_completo || '', email || null, telefono || '', direccion || '', ciudad || null]
         );
         conn.release();
@@ -205,7 +205,7 @@ app.put('/api/clientes/:id', async (req, res) => {
         const { documento, nombre_completo, email, telefono, direccion, ciudad } = req.body;
         const conn = await pool.getConnection();
         await conn.execute(
-            'UPDATE clientes SET documento = ?, nombre_completo = ?, email = ?, telefono = ?, direccion = ?, ciudad = ?, updated_at = NOW() WHERE id_cliente = ?',
+            'UPDATE clientes SET documento = ?, nombre_completo = ?, email = ?, telefono = ?, direccion = ?, ciudad = ? WHERE id_cliente = ?',
             [documento || '', nombre_completo || '', email || null, telefono || '', direccion || '', ciudad || null, id]
         );
         conn.release();
