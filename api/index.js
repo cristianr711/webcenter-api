@@ -333,7 +333,7 @@ app.post('/api/usuarios', async (req, res) => {
 
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
-            'INSERT INTO usuarios (nombre_completo, username, email, password, id_rol, activo, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
+            'INSERT INTO usuarios (nombre_completo, username, email, password_hash, id_rol) VALUES (?, ?, ?, ?, ?)',
             [nombre_completo, username, email || username, password || 'password123', id_rol || 2]
         );
         conn.release();
@@ -350,7 +350,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
         const { nombre_completo, username, email, password, id_rol } = req.body;
         const conn = await pool.getConnection();
         await conn.execute(
-            'UPDATE usuarios SET nombre_completo = ?, username = ?, email = ?, password = ?, id_rol = ? WHERE id_usuario = ?',
+            'UPDATE usuarios SET nombre_completo = ?, username = ?, email = ?, password_hash = ?, id_rol = ? WHERE id_usuario = ?',
             [nombre_completo || '', username || '', email || username || '', password || '', id_rol || 2, id]
         );
         conn.release();
