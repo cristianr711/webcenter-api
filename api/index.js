@@ -96,7 +96,7 @@ app.put('/api/productos/:id', async (req, res) => {
         if (precio_anterior !== precio_venta) {
             await conn.execute(
                 'INSERT INTO historial_precios (id_producto, precio_anterior, precio_nuevo, id_usuario, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
-                [id, precio_anterior, precio_venta || 0, 1]
+                [id, precio_anterior, precio_venta || 0, null]
             );
         }
         
@@ -354,7 +354,7 @@ app.post('/api/historial-precios', async (req, res) => {
             const conn = await pool.getConnection();
             await conn.execute(
                 'INSERT INTO historial_precios (id_producto, precio_anterior, precio_nuevo, id_usuario, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
-                [id_producto, precio_anterior, precio_nuevo, id_usuario || 1]
+                [id_producto, precio_anterior, precio_nuevo, id_usuario || null]
             );
             conn.release();
         }
