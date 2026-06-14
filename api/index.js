@@ -4,6 +4,7 @@ const cors = require('cors');
 const fileUpload = require('express-fileupload');
 require('dotenv').config();
 
+// Production API - WebCenter
 const app = express();
 
 app.use(cors());
