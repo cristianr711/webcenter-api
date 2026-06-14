@@ -508,12 +508,6 @@ app.post('/api/compras', async (req, res) => {
             const id_compra = result.insertId;
 
             for (const item of productos) {
-                const subtotal_item = item.cantidad * (item.precio_compra || item.precio_venta);
-                await conn.execute(
-                    'INSERT INTO detalles_compra (id_compra, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
-                    [id_compra, item.id_producto, item.cantidad, item.precio_compra || item.precio_venta, subtotal_item]
-                );
-                
                 // Actualizar stock del producto
                 await conn.execute(
                     'UPDATE productos SET stock_actual = stock_actual + ? WHERE id_producto = ?',
@@ -542,22 +536,6 @@ app.post('/api/compras/:id/delete', async (req, res) => {
         
         try {
             await conn.beginTransaction();
-            
-            // Restaurar stock de los productos
-            const [detalles] = await conn.execute(
-                'SELECT id_producto, cantidad FROM detalles_compra WHERE id_compra = ?',
-                [id]
-            );
-            
-            for (const detalle of detalles) {
-                await conn.execute(
-                    'UPDATE productos SET stock_actual = stock_actual - ? WHERE id_producto = ?',
-                    [detalle.cantidad, detalle.id_producto]
-                );
-            }
-            
-            // Eliminar detalles
-            await conn.execute('DELETE FROM detalles_compra WHERE id_compra = ?', [id]);
             
             // Eliminar compra
             await conn.execute('DELETE FROM compras WHERE id_compra = ?', [id]);
