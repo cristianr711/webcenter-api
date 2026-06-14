@@ -36,7 +36,7 @@ function hashPassword(password) {
 app.get('/api/usuarios', async (req, res) => {
     try {
         const conn = await pool.getConnection();
-        const [data] = await conn.execute('SELECT id_usuario, nombre_completo, username, email, id_rol, activo FROM usuarios');
+        const [data] = await conn.execute('SELECT u.id_usuario, u.nombre_completo, u.username, u.email, u.id_rol, u.activo, r.nombre as rol FROM usuarios u LEFT JOIN roles r ON u.id_rol = r.id_rol');
         conn.release();
         res.json(data);
     } catch (err) {
@@ -174,10 +174,25 @@ app.put('/api/productos/:id', async (req, res) => {
         const { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
         
         const conn = await pool.getConnection();
+        
+        // Get current price before update
+        const [oldData] = await conn.execute('SELECT precio_venta FROM productos WHERE id_producto = ?', [id]);
+        const oldPrice = oldData[0]?.precio_venta;
+        
+        // Update product
         await conn.execute(
             'UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, precio_compra = ?, stock_actual = ?, stock_minimo = ?, id_categoria = ?, id_proveedor = ?, updated_at = NOW() WHERE id_producto = ?',
-            [nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, id]
+            [nombre || '', descripcion || '', precio_venta || 0, precio_compra || 0, stock_actual || 0, stock_minimo || 0, id_categoria || 1, id_proveedor || null, id]
         );
+        
+        // Record price change if price was updated
+        if (oldPrice && oldPrice !== precio_venta) {
+            await conn.execute(
+                'INSERT INTO historial_precios (id_producto, id_usuario, precio_anterior, precio_nuevo, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
+                [id, null, oldPrice, precio_venta || 0]
+            );
+        }
+        
         conn.release();
         res.json({ mensaje: 'Producto actualizado' });
     } catch (err) {
@@ -376,6 +391,27 @@ app.post('/api/historial-precios', async (req, res) => {
         res.status(201).json({ id_historial: result.insertId });
     } catch (err) {
         console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== IMÁGENES =====================
+app.get('/api/productos/:id/imagen', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute('SELECT imagen_principal, imagen_mime FROM productos WHERE id_producto = ?', [id]);
+        conn.release();
+        
+        if (!data[0] || !data[0].imagen_principal) {
+            return res.status(404).json({ error: 'Imagen no encontrada' });
+        }
+        
+        const mimeType = data[0].imagen_mime || 'image/jpeg';
+        res.set('Content-Type', mimeType);
+        res.send(data[0].imagen_principal);
+    } catch (err) {
+        console.error('Error GET imagen:', err);
         res.status(500).json({ error: err.message });
     }
 });
