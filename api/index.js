@@ -76,6 +76,23 @@ app.post('/api/productos', async (req, res) => {
     }
 });
 
+app.put('/api/productos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, precio_compra = ?, stock_actual = ?, stock_minimo = ?, id_categoria = ?, id_proveedor = ?, updated_at = NOW() WHERE id_producto = ?',
+            [nombre || '', descripcion || '', precio_venta || 0, precio_compra || 0, stock_actual || 0, stock_minimo || 5, id_categoria || null, id_proveedor || null, id]
+        );
+        conn.release();
+        res.json({ mensaje: 'Producto actualizado' });
+    } catch (err) {
+        console.error('Error PUT productos:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // CATEGORIAS
 app.get('/api/categorias', async (req, res) => {
     try {
@@ -98,6 +115,22 @@ app.post('/api/categorias', async (req, res) => {
         );
         conn.release();
         res.status(201).json({ id_categoria: result.insertId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/categorias/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion, emoji } = req.body;
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE categorias SET nombre = ?, descripcion = ? WHERE id_categoria = ?',
+            [nombre || '', descripcion || '', id]
+        );
+        conn.release();
+        res.json({ mensaje: 'Categoría actualizada' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -130,6 +163,22 @@ app.post('/api/clientes', async (req, res) => {
     }
 });
 
+app.put('/api/clientes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { documento, nombre_completo, email, telefono, direccion, ciudad } = req.body;
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE clientes SET documento = ?, nombre_completo = ?, email = ?, telefono = ?, direccion = ?, ciudad = ?, updated_at = NOW() WHERE id_cliente = ?',
+            [documento || '', nombre_completo || '', email || '', telefono || '', direccion || '', ciudad || '', id]
+        );
+        conn.release();
+        res.json({ mensaje: 'Cliente actualizado' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // PROVEEDORES
 app.get('/api/proveedores', async (req, res) => {
     try {
@@ -152,6 +201,22 @@ app.post('/api/proveedores', async (req, res) => {
         );
         conn.release();
         res.status(201).json({ id_proveedor: result.insertId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/proveedores/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nit_documento, nombre_razon_social, email, telefono, direccion } = req.body;
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE proveedores SET nit_documento = ?, nombre_razon_social = ?, email = ?, telefono = ?, direccion = ? WHERE id_proveedor = ?',
+            [nit_documento || '', nombre_razon_social || '', email || '', telefono || '', direccion || '', id]
+        );
+        conn.release();
+        res.json({ mensaje: 'Proveedor actualizado' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
