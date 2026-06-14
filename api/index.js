@@ -81,14 +81,49 @@ app.put('/api/productos/:id', async (req, res) => {
         const { id } = req.params;
         const { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
         const conn = await pool.getConnection();
+        
+        // Obtener precio anterior para historial
+        const [oldProduct] = await conn.execute('SELECT precio_venta FROM productos WHERE id_producto = ?', [id]);
+        const precio_anterior = oldProduct.length > 0 ? oldProduct[0].precio_venta : 0;
+        
+        // Actualizar producto
         await conn.execute(
             'UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, precio_compra = ?, stock_actual = ?, stock_minimo = ?, id_categoria = ?, id_proveedor = ?, updated_at = NOW() WHERE id_producto = ?',
             [nombre || '', descripcion || '', precio_venta || 0, precio_compra || 0, stock_actual || 0, stock_minimo || 5, id_categoria || null, id_proveedor || null, id]
         );
+        
+        // Registrar cambio de precio en historial si cambió
+        if (precio_anterior !== precio_venta) {
+            await conn.execute(
+                'INSERT INTO historial_precios (id_producto, precio_anterior, precio_nuevo, id_usuario, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
+                [id, precio_anterior, precio_venta || 0, 1]
+            );
+        }
+        
         conn.release();
         res.json({ mensaje: 'Producto actualizado' });
     } catch (err) {
         console.error('Error PUT productos:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/productos/:id/imagen', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        const [rows] = await conn.execute('SELECT imagen_principal, imagen_mime FROM productos WHERE id_producto = ? AND tiene_imagen = 1', [id]);
+        conn.release();
+        
+        if (rows.length === 0 || !rows[0].imagen_principal) {
+            return res.status(404).json({ error: 'Imagen no encontrada' });
+        }
+        
+        const { imagen_principal, imagen_mime } = rows[0];
+        res.set('Content-Type', imagen_mime || 'image/jpeg');
+        res.send(imagen_principal);
+    } catch (err) {
+        console.error('Error GET imagen:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -308,6 +343,24 @@ app.get('/api/historial-precios', async (req, res) => {
         conn.release();
         res.json(data);
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/historial-precios', async (req, res) => {
+    try {
+        const { id_producto, precio_anterior, precio_nuevo, id_usuario } = req.body;
+        if (precio_anterior !== precio_nuevo) {
+            const conn = await pool.getConnection();
+            await conn.execute(
+                'INSERT INTO historial_precios (id_producto, precio_anterior, precio_nuevo, id_usuario, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
+                [id_producto, precio_anterior, precio_nuevo, id_usuario || 1]
+            );
+            conn.release();
+        }
+        res.json({ mensaje: 'Historial registrado' });
+    } catch (err) {
+        console.error('Error historial:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
