@@ -175,6 +175,14 @@ CREATE TABLE IF NOT EXISTS detalles_factura (
     FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS producto_imagenes (
+    id_imagen INT AUTO_INCREMENT PRIMARY KEY,
+    id_producto INT NOT NULL,
+    imagen_data MEDIUMBLOB NOT NULL,
+    imagen_mime VARCHAR(100) DEFAULT 'image/webp',
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON DELETE CASCADE
+);
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 INSERT IGNORE INTO roles (id_rol, nombre, descripcion) VALUES
