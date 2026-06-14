@@ -127,7 +127,7 @@ app.get('/api/productos', async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error('Error GET productos:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Error al cargar productos.', detail: err.message, code: err.code });
     }
 });
 
