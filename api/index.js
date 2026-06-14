@@ -500,14 +500,27 @@ app.post('/api/compras', async (req, res) => {
         
         try {
             await conn.beginTransaction();
+            
+            // Calcular subtotal e impuesto (asumiendo impuesto del 19%)
+            const subtotal = total / 1.19;
+            const impuesto = total - subtotal;
+            
             const [result] = await conn.execute(
-                'INSERT INTO compras (id_proveedor, id_usuario, fecha_compra) VALUES (?, ?, NOW())',
-                [id_proveedor, id_usuario || null]
+                'INSERT INTO compras (id_proveedor, id_usuario, numero_factura_proveedor, subtotal, impuesto, total_compra, estado, fecha_compra) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+                [id_proveedor, id_usuario || null, numero_factura || null, subtotal, impuesto, total, 'pendiente']
             );
 
             const id_compra = result.insertId;
 
+            // Insertar detalles de compra y actualizar stock
             for (const item of productos) {
+                // Insertar detalle de compra
+                const itemSubtotal = item.precio_venta * item.cantidad;
+                await conn.execute(
+                    'INSERT INTO detalle_compras (id_compra, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [id_compra, item.id_producto, item.cantidad, item.precio_venta, itemSubtotal]
+                );
+                
                 // Actualizar stock del producto
                 await conn.execute(
                     'UPDATE productos SET stock_actual = stock_actual + ? WHERE id_producto = ?',
@@ -517,7 +530,7 @@ app.post('/api/compras', async (req, res) => {
 
             await conn.commit();
             conn.release();
-            res.status(201).json({ id_compra, numero_factura: numero_factura || `COM-${id_compra}` });
+            res.status(201).json({ id_compra, numero_factura: numero_factura || `COM-${id_compra}`, total });
         } catch (err) {
             await conn.rollback();
             conn.release();
