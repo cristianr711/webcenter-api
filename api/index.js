@@ -93,7 +93,7 @@ app.put('/api/productos/:id', async (req, res) => {
         );
         
         // Registrar cambio de precio en historial si cambió
-        if (precio_anterior !== precio_venta) {
+        if (Number(precio_anterior) !== Number(precio_venta || 0)) {
             await conn.execute(
                 'INSERT INTO historial_precios (id_producto, precio_anterior, precio_nuevo, id_usuario, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
                 [id, precio_anterior, precio_venta || 0, null]
