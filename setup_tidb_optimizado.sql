@@ -198,6 +198,41 @@ CREATE TABLE IF NOT EXISTS historial_precios (
     INDEX idx_fecha (fecha_cambio)
 );
 
+-- 13. FACTURAS (para facturación)
+CREATE TABLE IF NOT EXISTS facturas (
+    id_factura INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT,
+    id_usuario INT,
+    numero_factura VARCHAR(50) UNIQUE NOT NULL,
+    subtotal DECIMAL(14,2) NOT NULL DEFAULT 0,
+    impuesto DECIMAL(14,2) NOT NULL DEFAULT 0,
+    total DECIMAL(14,2) NOT NULL DEFAULT 0,
+    metodo_pago ENUM('efectivo','transferencia','tarjeta','nequi','daviplata') DEFAULT 'efectivo',
+    estado_factura ENUM('emitida','pagada','anulada') DEFAULT 'emitida',
+    fecha_emision TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente) ON DELETE SET NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    INDEX idx_numero (numero_factura),
+    INDEX idx_cliente (id_cliente),
+    INDEX idx_usuario (id_usuario),
+    INDEX idx_estado (estado_factura),
+    INDEX idx_fecha (fecha_emision)
+);
+
+-- 14. DETALLES DE FACTURA
+CREATE TABLE IF NOT EXISTS detalles_factura (
+    id_detalle_factura INT AUTO_INCREMENT PRIMARY KEY,
+    id_factura INT NOT NULL,
+    id_producto INT,
+    cantidad INT NOT NULL DEFAULT 1,
+    precio_unitario DECIMAL(12,2) NOT NULL,
+    subtotal DECIMAL(14,2) NOT NULL,
+    FOREIGN KEY (id_factura) REFERENCES facturas(id_factura) ON DELETE CASCADE,
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON DELETE SET NULL,
+    INDEX idx_factura (id_factura),
+    INDEX idx_producto (id_producto)
+);
+
 -- =============================================================
 -- INSERTAR ROLES POR DEFECTO
 -- =============================================================
