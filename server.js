@@ -6,6 +6,7 @@ const fileUpload = require('express-fileupload');
 require('dotenv').config();
 
 const app = express();
+const VERSION = '2.1.0-fixed-producto'; // Version para debug
 
 // Middleware
 app.use(cors());
@@ -159,10 +160,10 @@ app.post('/api/productos', async (req, res) => {
             [nombre || '', descripcion || '', precio_venta || 0, precio_c, stock_actual || 0, stock_m, cat_final, id_proveedor || null, imagen_principal, imagen_mime, tiene_imagen]
         );
         conn.release();
-        res.status(201).json({ id_producto: result.insertId, mensaje: 'Producto creado' });
+        res.status(201).json({ id_producto: result.insertId, mensaje: 'Producto creado', version: VERSION });
     } catch (err) {
         console.error('❌ Error POST productos:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message, version: VERSION, detail: err.code });
     }
 });
 
@@ -508,9 +509,9 @@ app.get('/api/health', async (req, res) => {
         const conn = await pool.getConnection();
         await conn.execute('SELECT 1');
         conn.release();
-        res.json({ status: 'OK', database: 'Connected' });
+        res.json({ status: 'OK', database: 'Connected', version: VERSION });
     } catch (err) {
-        res.status(500).json({ status: 'ERROR', error: err.message });
+        res.status(500).json({ status: 'ERROR', error: err.message, version: VERSION });
     }
 });
 
