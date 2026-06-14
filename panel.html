@@ -1457,7 +1457,7 @@
                 <tr>
                     <td>#${c.numero_factura_proveedor || 'S/N'}</td>
                     <td>${new Date(c.fecha_compra).toLocaleDateString()}</td>
-                    <td>${c.proveedor}</td>
+                    <td>${c.proveedor_nombre}</td>
                     <td style="color:var(--accent-cyan);">$${Number(c.total_compra).toLocaleString()}</td>
                     <td>
                         <button type="button" class="action-btn btn-edit" title="Editar" onclick='openModal("compra", ${JSON.stringify(c).replace(/'/g, '&#39;')})'>✏️</button>
