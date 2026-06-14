@@ -116,22 +116,17 @@ app.get('/api/productos', async (req, res) => {
     try {
         const conn = await pool.getConnection();
         const [data] = await conn.execute(`
-            SELECT p.*, c.nombre as categoria_nombre, pv.nombre_razon_social as proveedor_nombre
+            SELECT p.id_producto, p.nombre, p.descripcion, p.precio_venta, p.precio_compra, p.stock_actual, p.stock_minimo, p.id_categoria, p.id_proveedor, p.activo, p.tiene_imagen, p.url_imagen, p.created_at, p.updated_at, c.nombre as categoria_nombre, pv.nombre_razon_social as proveedor_nombre
             FROM productos p
             LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
             LEFT JOIN proveedores pv ON p.id_proveedor = pv.id_proveedor
             WHERE p.activo = 1
         `);
         
-        // Convertir imágenes a base64
-        const dataConImagenes = data.map(p => ({
-            ...p,
-            imagen_principal: p.imagen_principal ? 'data:' + (p.imagen_mime || 'image/jpeg') + ';base64,' + p.imagen_principal.toString('base64') : null
-        }));
-        
         conn.release();
-        res.json(dataConImagenes);
+        res.json(data);
     } catch (err) {
+        console.error('Error GET productos:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -142,12 +137,14 @@ app.post('/api/productos', async (req, res) => {
         let { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
         let imagen_principal = null;
         let imagen_mime = null;
+        let tiene_imagen = 0;
         
         // Si viene un archivo, procesarlo
         if (req.files && req.files.imagenes) {
             const archivo = Array.isArray(req.files.imagenes) ? req.files.imagenes[0] : req.files.imagenes;
             imagen_principal = archivo.data; // Buffer con la imagen
             imagen_mime = archivo.mimetype || 'image/jpeg';
+            tiene_imagen = 1;
         }
         
         // Valores por defecto
@@ -157,8 +154,8 @@ app.post('/api/productos', async (req, res) => {
         
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
-            'INSERT INTO productos (nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, imagen_principal, imagen_mime, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
-            [nombre || '', descripcion || '', precio_venta || 0, precio_c, stock_actual || 0, stock_m, cat_final, id_proveedor || null, imagen_principal, imagen_mime]
+            'INSERT INTO productos (nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, imagen_principal, imagen_mime, tiene_imagen, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
+            [nombre || '', descripcion || '', precio_venta || 0, precio_c, stock_actual || 0, stock_m, cat_final, id_proveedor || null, imagen_principal, imagen_mime, tiene_imagen]
         );
         conn.release();
         res.status(201).json({ id_producto: result.insertId, mensaje: 'Producto creado' });
@@ -179,11 +176,22 @@ app.put('/api/productos/:id', async (req, res) => {
         const [oldData] = await conn.execute('SELECT precio_venta FROM productos WHERE id_producto = ?', [id]);
         const oldPrice = oldData[0]?.precio_venta;
         
-        // Update product
-        await conn.execute(
-            'UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, precio_compra = ?, stock_actual = ?, stock_minimo = ?, id_categoria = ?, id_proveedor = ?, updated_at = NOW() WHERE id_producto = ?',
-            [nombre || '', descripcion || '', precio_venta || 0, precio_compra || 0, stock_actual || 0, stock_minimo || 0, id_categoria || 1, id_proveedor || null, id]
-        );
+        // Check if there's a new image file
+        let updateQuery = 'UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, precio_compra = ?, stock_actual = ?, stock_minimo = ?, id_categoria = ?, id_proveedor = ?, updated_at = NOW()';
+        let params = [nombre || '', descripcion || '', precio_venta || 0, precio_compra || 0, stock_actual || 0, stock_minimo || 0, id_categoria || 1, id_proveedor || null];
+        
+        if (req.files && req.files.imagenes) {
+            const archivo = Array.isArray(req.files.imagenes) ? req.files.imagenes[0] : req.files.imagenes;
+            const imagen_principal = archivo.data;
+            const imagen_mime = archivo.mimetype || 'image/jpeg';
+            updateQuery += ', imagen_principal = ?, imagen_mime = ?, tiene_imagen = 1';
+            params.splice(params.length - 1, 0, imagen_principal, imagen_mime);
+        }
+        
+        updateQuery += ' WHERE id_producto = ?';
+        params.push(id);
+        
+        await conn.execute(updateQuery, params);
         
         // Record price change if price was updated
         if (oldPrice && oldPrice !== precio_venta) {
