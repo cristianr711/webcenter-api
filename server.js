@@ -151,7 +151,7 @@ app.post('/api/productos', async (req, res) => {
         // Valores por defecto
         const precio_c = precio_compra || precio_venta || 0;
         const stock_m = stock_minimo || 5;
-        const cat_final = id_categoria || 120001;
+        const cat_final = id_categoria || null;
         
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
