@@ -323,6 +323,44 @@ app.get('/api/usuarios', async (req, res) => {
     }
 });
 
+app.post('/api/usuarios', async (req, res) => {
+    try {
+        const { nombre_completo, username, email, password, id_rol } = req.body;
+        
+        if (!nombre_completo || !username || !email) {
+            return res.status(400).json({ error: 'Faltan campos requeridos' });
+        }
+
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO usuarios (nombre_completo, username, email, password, id_rol, activo, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
+            [nombre_completo, username, email, password || 'password123', id_rol || 2]
+        );
+        conn.release();
+        res.status(201).json({ id_usuario: result.insertId, mensaje: 'Usuario creado' });
+    } catch (err) {
+        console.error('Error POST usuarios:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/usuarios/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre_completo, username, email, password, id_rol } = req.body;
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE usuarios SET nombre_completo = ?, username = ?, email = ?, password = ?, id_rol = ? WHERE id_usuario = ?',
+            [nombre_completo || '', username || '', email || '', password || '', id_rol || 2, id]
+        );
+        conn.release();
+        res.json({ mensaje: 'Usuario actualizado' });
+    } catch (err) {
+        console.error('Error PUT usuarios:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/usuarios/:id/delete', async (req, res) => {
     try {
         const { id } = req.params;
@@ -454,7 +492,7 @@ app.post('/api/compras', async (req, res) => {
     try {
         const { id_proveedor, id_usuario, numero_factura, productos, total } = req.body;
 
-        if (!id_proveedor || !numero_factura || !productos || productos.length === 0) {
+        if (!id_proveedor || !productos || productos.length === 0) {
             return res.status(400).json({ error: 'Faltan campos requeridos' });
         }
 
@@ -463,8 +501,8 @@ app.post('/api/compras', async (req, res) => {
         try {
             await conn.beginTransaction();
             const [result] = await conn.execute(
-                'INSERT INTO compras (id_proveedor, id_usuario, numero_factura, total, fecha_compra) VALUES (?, ?, ?, ?, NOW())',
-                [id_proveedor, id_usuario || null, numero_factura, total || 0]
+                'INSERT INTO compras (id_proveedor, id_usuario, total, fecha_compra) VALUES (?, ?, ?, NOW())',
+                [id_proveedor, id_usuario || null, total || 0]
             );
 
             const id_compra = result.insertId;
@@ -485,7 +523,7 @@ app.post('/api/compras', async (req, res) => {
 
             await conn.commit();
             conn.release();
-            res.status(201).json({ id_compra, numero_factura });
+            res.status(201).json({ id_compra, numero_factura: numero_factura || `COM-${id_compra}` });
         } catch (err) {
             await conn.rollback();
             conn.release();

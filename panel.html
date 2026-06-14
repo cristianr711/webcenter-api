@@ -1319,7 +1319,7 @@
             const method = currentEditId ? 'PUT' : 'POST';
             const url = currentEditId ? `${API_URL}/usuarios/${currentEditId}` : `${API_URL}/usuarios`;
             try {
-                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre_completo: nombre, username: email, password: pass, rol }) });
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre_completo: nombre, username: email, password: pass, id_rol: rol || 2 }) });
                 if (res.ok) { showToast("Usuario guardado"); closeModal('usuario'); loadData(); }
                 else { const error = await res.json(); showToast(error.error || "Error", "error"); }
             } catch (e) { showToast("Error de conexión", "error"); }
