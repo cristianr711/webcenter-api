@@ -514,11 +514,13 @@ app.post('/api/compras', async (req, res) => {
 
             // Insertar detalles de compra y actualizar stock
             for (const item of productos) {
-                // Insertar detalle de compra
-                const itemSubtotal = item.precio_venta * item.cantidad;
+                // Usar precio_compra si existe, sino precio_venta
+                const precio_unitario = item.precio_compra || item.precio_venta;
+                const itemSubtotal = precio_unitario * item.cantidad;
+                
                 await conn.execute(
                     'INSERT INTO detalle_compras (id_compra, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
-                    [id_compra, item.id_producto, item.cantidad, item.precio_venta, itemSubtotal]
+                    [id_compra, item.id_producto, item.cantidad, precio_unitario, itemSubtotal]
                 );
                 
                 // Actualizar stock del producto
