@@ -501,8 +501,8 @@ app.post('/api/compras', async (req, res) => {
         try {
             await conn.beginTransaction();
             const [result] = await conn.execute(
-                'INSERT INTO compras (id_proveedor, id_usuario, total, fecha_compra) VALUES (?, ?, ?, NOW())',
-                [id_proveedor, id_usuario || null, total || 0]
+                'INSERT INTO compras (id_proveedor, id_usuario, fecha_compra) VALUES (?, ?, NOW())',
+                [id_proveedor, id_usuario || null]
             );
 
             const id_compra = result.insertId;
