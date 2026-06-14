@@ -1,0 +1,112 @@
+═══════════════════════════════════════════════════════════════════════════════
+               🚀 CONFIGURACIÓN VERCEL - PASOS A SEGUIR
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ PASO 1: CÓDIGO YA ESTÁ EN GITHUB
+   Repositorio: https://github.com/cristianr711/webcenter-api
+   Rama: main
+   Archivos: server.js, package.json, vercel.json, .gitignore
+
+❌ PASO 2: CONFIGURAR VARIABLES DE ENTORNO EN VERCEL (MANUAL)
+
+   1. Ve a: https://vercel.com/cristianramirezfe-gmailcoms-projects/webcenter-api
+   2. Click en "Settings" (Configuración)
+   3. Click en "Environment Variables" (Variables de Entorno)
+   4. Añade EXACTAMENTE estas variables:
+
+      NAME                          VALUE
+      ────────────────────────────  ────────────────────────────────────
+      DB_HOST                       gateway01.us-east-1.prod.aws.tidbcloud.com
+      DB_PORT                       4000
+      DB_USER                       k7vrnxBcf7mccfR.root
+      DB_PASS                       zNhNalRP8tNZBVAo
+      DB_NAME                       db_webcenter
+      NODE_ENV                      production
+
+   5. Click "Save" en cada variable
+   6. Espera a que Vercel redeploy automáticamente
+
+   🔐 IMPORTANTE: 
+      - NO incluyas .env en Git (ya está en .gitignore)
+      - Usa el panel de Vercel para configurar secretos
+      - Vercel re-deployará automáticamente después de agregar vars
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⏳ PASO 3: ESPERAR DEPLOYMENT (2-3 minutos)
+
+   Vercel automáticamente:
+   1. Detectará el nuevo push a GitHub
+   2. Instalará dependencias (npm install)
+   3. Compilará el proyecto
+   4. Deployará en: https://webcenter-api.vercel.app
+   5. Mostrará "Ready" en el dashboard
+
+   📊 Ver progreso:
+      - Ve a: https://vercel.com/cristianramirezfe-gmailcoms-projects/webcenter-api
+      - Ve a la pestaña "Deployments"
+      - Espera el estado "Ready" (verde)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ PASO 4: VERIFICAR QUE FUNCIONA
+
+   Una vez que esté "Ready", prueba este endpoint en el navegador:
+   
+   URL: https://webcenter-api.vercel.app/api/health
+   
+   Deberías ver:
+   {"status":"OK","database":"Connected"}
+
+   Si ves error 500 o timeout:
+   → Revisa que las variables de entorno estén correctas
+   → Espera 5 minutos más
+   → Recarga la página
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📝 PASO 5: ACTUALIZAR panel.html PARA PRODUCCIÓN
+
+   Una vez que hayas verificado que https://webcenter-api.vercel.app/api/health 
+   funciona, cambia en panel.html:
+
+   LÍNEA 993:
+   
+   De:  const API_URL = 'http://localhost:3000/api';
+   A:   const API_URL = 'https://webcenter-api.vercel.app/api';
+
+   Esto hará que el panel use la API en producción en lugar de localhost.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 RESUMEN:
+
+   ✅ Backend en GitHub                    → HECHO
+   ⏳ Configurar vars en Vercel             → HACER AHORA (manual)
+   ⏳ Esperar deployment en Vercel          → 2-3 minutos
+   ⏳ Verificar health endpoint             → 5 minutos
+   ⏳ Actualizar panel.html                 → Cuando Vercel esté ready
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 TROUBLESHOOTING:
+
+   Si Vercel dice "Error: No Build Output":
+   → Vercel.json está configurado correctamente
+   → Node 18.x está especificado en package.json
+   → Debería funcionar
+
+   Si API retorna 500 después de deployment:
+   → Verifica que DB_PASS esté SIN espacios
+   → Verifica que DB_HOST sea exactamente: gateway01.us-east-1.prod.aws.tidbcloud.com
+   → Verifica que NODE_ENV = production
+   → Espera 5 minutos a que Vercel complete la configuración
+
+   Si no conecta a TiDB:
+   → Verifica que las credenciales sean exactas
+   → Verifica que firewall de TiDB permita conexiones desde Vercel
+   → Prueba localmente primero (ya funciona)
+
+═══════════════════════════════════════════════════════════════════════════════
+                    🚀 ¡LISTO PARA CONFIGURAR! 🚀
+═══════════════════════════════════════════════════════════════════════════════

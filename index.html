@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>WebCenter | Diseño Web Profesional en Ibagué</title>
+    <meta name="description"
+        content="Agencia de desarrollo web y programación en Ibagué, Tolima. Creamos sitios web modernos, tiendas virtuales y software a medida.">
+    <meta name="keywords"
+        content="diseño web ibague, programador web tolima, desarrollo web colombia, seo, adsi, webcenter">
+    <meta name="author" content="Cristian Ramírez Fernández">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:title" content="WebCenter | Desarrollo Web Profesional">
+    <meta property="og:description" content="Diseño Web del Futuro, Hoy. Sitios web rápidos y modernos en Ibagué.">
+    <meta property="og:image" content="https://www.webcenter.fun/imagenes/logo.webp">
+    <meta property="og:url" content="https://www.webcenter.fun">
+    <meta property="og:type" content="website">
+
+    <!-- Removed Netlify Identity -->
+    <link rel="icon" href="imagenes/logo.webp" type="image/webp">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            /* MODO OSCURO (Default) */
+            --bg-dark: #050a14;
+            --bg-card: #0b1629;
+            --accent-cyan: #00e5ff;
+            --accent-blue: #0072ff;
+            --white: #ffffff;
+            --silver: #e0e0e0;
+            --gradient-main: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            --nav-bg-scrolled: rgba(5, 10, 20, 0.95);
+        }
+
+        /* MODO CLARO */
+        body.light-mode {
+            --bg-dark: #f4f7f6;
+            --bg-card: #ffffff;
+            --white: #1a1a1a;
+            --silver: #4a4a4a;
+            --nav-bg-scrolled: rgba(255, 255, 255, 0.95);
+        }
+
+        /* TRANSICIONES SUAVES DE COLOR */
+        body,
+        nav,
+        .service-card,
+        .stat-card,
+        .team-member,
+        .contact-wrapper,
+        .cart-sidebar {
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--silver);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- NAVBAR DINÁMICO --- */
+        nav {
+            position: fixed;
+            width: 100%;
+            padding: 20px 0;
+            background: transparent;
+            z-index: 1000;
+            transition: all 0.4s ease;
+        }
+
+        nav.scrolled {
+            background: var(--nav-bg-scrolled);
+            padding: 10px 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo img {
+            height: 45px;
+            width: auto;
+        }
+
+        .logo span {
+            color: var(--accent-cyan);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 20px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: var(--accent-cyan);
+            color: var(--white);
+            /* Texto blanco en hover siempre se ve bien con cian */
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 229, 255, 0.5);
+        }
+
+        /* BOTÓN TEMA */
+        .theme-btn {
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin: 0 10px;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.2) rotate(20deg);
+        }
+
+        /* --- ESTILOS BOTÓN USUARIO Y ADPANEL --- */
+        .user-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--white);
+            margin-left: 10px;
+        }
+
+        .user-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-cyan);
+            transform: scale(1.1);
+        }
+
+        .user-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        /* Estilo cuando está logueado */
+        .user-logged-in {
+            border-color: #25d366 !important;
+            box-shadow: 0 0 10px rgba(37, 211, 102, 0.5);
+        }
+
+        /* Botón ADPanel (Oculto por defecto) */
+        #adpanel-btn {
+            display: none;
+            background: linear-gradient(45deg, #ff0055, #ff00aa);
+            color: white !important;
+            /* Forzar color */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 800;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        #adpanel-btn:hover {
+            background: #ff0055;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff0055;
+        }
+
+        /* --- CARRITO ICONO --- */
+        .cart-icon-wrapper {
+            position: relative;
+            cursor: pointer;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        /* --- CARRITO SIDEBAR --- */
+        .cart-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 350px;
+            height: 100vh;
+            background: var(--bg-card);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cart-sidebar.open {
+            right: 0;
+        }
+
+        .cart-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-cart {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        .cart-item-info h4 {
+            color: var(--white);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .cart-item-info p {
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+        }
+
+        .cart-remove {
+            color: #ff4757;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .cart-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-total {
+            color: var(--white);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .cart-total span {
+            color: var(--accent-cyan);
+            display: block;
+            font-size: 0.8rem;
+            font-weight: normal;
+        }
+
+        .btn-checkout {
+            background: #25d366;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-checkout:hover {
+            background: #1da851;
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            background: url('imagenes/fondo1.webp') no-repeat center center/cover;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 10, 20, 0.7);
+            z-index: 0;
+        }
+
+        .hero-content {
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .title-animate {
+            font-size: 4rem;
+            font-weight: 800;
+            color: white;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 0.3s;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .text-gradient-dynamic {
+            background: linear-gradient(270deg, #00c6ff, #0072ff, #00e5ff);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 6s ease infinite;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #e0e0e0;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 35px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--gradient-main);
+            color: #ffffff;
+            /* Botón siempre texto blanco */
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.8);
+        }
+
+        /* --- CARRUSEL DE TECNOLOGÍAS --- */
+        .tech-section {
+            background: var(--bg-card);
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tech-track {
+            display: flex;
+            width: calc(200px * 14);
+            animation: scroll 20s linear infinite;
+        }
+
+        @keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(calc(-200px * 7));
+            }
+        }
+
+        .tech-item {
+            width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .tech-badge {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--silver);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 25px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .tech-badge:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+            background: rgba(0, 229, 255, 0.05);
+        }
+
+
+        /* --- SERVICIOS --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .services {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--white);
+            font-weight: 800;
+        }
+
+        .text-gradient {
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+
+        .service-card {
+            background: var(--bg-card);
+            padding: 0;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s, border-color 0.3s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(0, 229, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-image-wrapper {
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .service-card:hover .card-image-wrapper img {
+            transform: scale(1.1);
+        }
+
+        .card-image-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 0%, rgba(11, 22, 41, 0.6) 100%);
+        }
+
+        .card-content {
+            padding: 30px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: var(--white);
+            font-weight: 700;
+        }
+
+        .service-card p {
+            color: var(--silver);
+            font-size: 0.95rem;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gradient-main);
+            z-index: 10;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s;
+        }
+
+        .service-card:hover::before {
+            transform: scaleX(1);
+        }
+
+
+        /* --- EXPERIENCIA --- */
+        .experience {
+            padding: 100px 0;
+            background: linear-gradient(to right, var(--bg-card), var(--bg-dark));
+        }
+
+        .exp-container {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+        }
+
+        .exp-text {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .exp-text h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--white);
+            font-weight: 800;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            flex: 1;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 30px;
+            text-align: center;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: default;
+            position: relative;
+        }
+
+        /* En modo claro las stats necesitan fondo para verse */
+        body.light-mode .stat-card {
+            background: #ffffff;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 15px 30px rgba(0, 229, 255, 0.15);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* --- EQUIPO --- */
+        .team {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        .team-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .team-member {
+            text-align: center;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s;
+            max-width: 350px;
+        }
+
+        .team-member:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-cyan);
+        }
+
+        .team-member img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--accent-cyan);
+            margin-bottom: 20px;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.2);
+        }
+
+        .team-member h4 {
+            font-size: 1.5rem;
+            color: var(--white);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .team-role {
+            color: var(--accent-blue);
+            font-weight: 600;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- CONTACTO --- */
+        .contact {
+            padding: 100px 0;
+        }
+
+        .contact-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            background: var(--bg-card);
+            border-radius: 30px;
+            padding: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        .contact-info h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--white);
+            font-weight: 800;
+        }
+
+        .info-item {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+            color: var(--silver);
+        }
+
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 229, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+        }
+
+        form input,
+        form textarea {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--white);
+            font-family: inherit;
+        }
+
+        form input:focus,
+        form textarea:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        form button {
+            width: 100%;
+        }
+
+        footer {
+            padding: 30px 0;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* --- MEDIA QUERY RESPONSIVE (MENÚ HAMBURGUESA CORREGIDO) --- */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: var(--white);
+            margin-right: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .hamburger {
+                display: block;
+                z-index: 2001;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                background: var(--bg-card);
+                width: 75%;
+                height: 100vh;
+                flex-direction: column;
+
+                /* CORRECCIÓN DE SCROLL Y POSICIÓN */
+                justify-content: flex-start;
+                /* Empieza arriba */
+                padding-top: 100px;
+                /* Espacio para que no se pegue al techo */
+                overflow-y: auto;
+                /* Scroll si es necesario */
+
+                transition: 0.4s ease;
+                z-index: 2000;
+                border-left: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+            }
+
+            .nav-links.active {
+                right: 0;
+            }
+
+            .nav-links li {
+                margin: 20px 0;
+                width: 100%;
+                text-align: center;
+            }
+
+            .contact-wrapper {
+                grid-template-columns: 1fr;
+                padding: 30px;
+            }
+
+            .exp-container {
+                flex-direction: column;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .user-btn {
+                margin-left: 0;
+                margin-top: 10px;
+                margin: 10px auto;
+            }
+
+            .cart-sidebar {
+                width: 100%;
+                right: -100%;
+            }
+
+            .theme-btn {
+                justify-content: center;
+                margin-top: 20px;
+            }
+        }
+
+        /* --- ESTILOS BOTÓN WHATSAPP --- */
+        .whatsapp-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #25d366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .whatsapp-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(37, 211, 102, 0.6);
+        }
+
+        .whatsapp-btn img {
+            width: 35px;
+            height: 35px;
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav id="navbar">
+        <div class="container">
+            <div class="logo">
+                <img src="imagenes/logo.webp" alt="WebCenter Logo">
+                Web<span>Center</span>
+            </div>
+
+            <div class="hamburger" onclick="toggleMenu()">☰</div>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#inicio" onclick="toggleMenu()">Inicio</a></li>
+                <li><a href="#servicios" onclick="toggleMenu()">Servicios</a></li>
+                <li><a href="tienda.html">Tienda</a></li>
+                <li><a href="proyectos.html">Proyectos</a></li>
+                <li><a href="#experiencia" onclick="toggleMenu()">Experiencia</a></li>
+                <li><a href="#equipo" onclick="toggleMenu()">Equipo</a></li>
+                <li><a href="#contacto" onclick="toggleMenu()">Contacto</a></li>
+
+                <li class="cart-icon-wrapper" onclick="toggleCart()"
+                    style="cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    🛒 <span id="cart-count" class="cart-badge">0</span>
+                </li>
+
+                <li class="theme-btn" onclick="toggleTheme()" title="Cambiar Tema">
+                    <span id="theme-icon">☀️</span>
+                </li>
+
+                <li><a href="panel.html" id="adpanel-btn">ADPanel</a></li>
+
+                <li onclick="handleLoginClick()" id="user-icon" class="user-btn" title="Iniciar Sesión / Registrarse">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3 style="color:var(--white)">Tu Carrito</h3>
+            <button class="close-cart" onclick="toggleCart()">×</button>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <p style="color:#aaa; text-align:center; margin-top:20px;">Tu carrito está vacío.</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <div id="cart-total-price">$ 0</div>
+            </div>
+            <button class="btn-checkout" onclick="checkoutWhatsApp()">
+                Pagar <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="20"
+                    style="margin-left:5px;">
+            </button>
+        </div>
+    </div>
+
+    <!-- CUSTOM AUTH MODAL -->
+    <style>
+        .auth-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-content {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid var(--accent-cyan);
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 229, 255, 0.2);
+        }
+
+        .auth-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--silver);
+            background: none;
+            border: none;
+        }
+
+        .auth-title {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--white);
+            font-weight: 800;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            border-radius: 10px;
+            outline: none;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .auth-input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: var(--gradient-main);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .auth-btn:hover {
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--silver);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .auth-switch:hover {
+            color: var(--accent-cyan);
+            text-decoration: underline;
+        }
+
+        .auth-error {
+            color: #ff4757;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        #auth-form-register {
+            display: none;
+        }
+
+        .user-menu {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 150px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+        }
+
+        .user-menu button {
+            background: none;
+            border: none;
+            color: var(--white);
+            text-align: left;
+            padding: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .user-menu button:hover {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent-cyan);
+        }
+    </style>
+
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-content">
+            <button class="auth-close" onclick="closeAuthModal()">×</button>
+            <h2 class="auth-title" id="auth-title">Iniciar Sesión</h2>
+            <div class="auth-error" id="auth-error">Error message</div>
+
+            <form id="auth-form-login" onsubmit="handleLogin(event)">
+                <input type="email" id="login-email" class="auth-input" placeholder="Correo Electrónico" required>
+                <input type="password" id="login-pass" class="auth-input" placeholder="Contraseña" required>
+                <button type="submit" class="auth-btn">Entrar</button>
+                <p class="auth-switch" onclick="switchAuthMode('register')">¿No tienes cuenta? Regístrate aquí</p>
+            </form>
+
+            <form id="auth-form-register" onsubmit="handleRegister(event)">
+                <input type="text" id="reg-name" class="auth-input" placeholder="Nombre Completo" required>
+                <input type="email" id="reg-email" class="auth-input" placeholder="Correo Electrónico" required>
+                <input type="password" id="reg-pass" class="auth-input" placeholder="Contraseña" required>
+                <button type="submit" class="auth-btn">Crear Cuenta</button>
+                <p class="auth-switch" onclick="switchAuthMode('login')">¿Ya tienes cuenta? Inicia Sesión</p>
+            </form>
+        </div>
+    </div>
+    <div id="user-dropdown" class="user-menu">
+        <button id="btn-admin-panel" style="display:none;" onclick="window.location.href='panel.html'">Panel
+            Admin</button>
+        <button onclick="handleLogout()">Cerrar Sesión</button>
+    </div>
+
+
+    <header class="hero" id="inicio">
+        <div class="container hero-content">
+            <h1 class="title-animate">Diseño Web del <br><span class="text-gradient-dynamic">Futuro, Hoy.</span></h1>
+            <p>Transformamos tu visión en una experiencia digital impactante. En WebCenter, fusionamos código limpio con
+                diseño de vanguardia.</p>
+            <a href="#contacto" class="btn btn-primary">Cotizar Proyecto</a>
+        </div>
+    </header>
+
+    <section class="tech-section">
+        <div class="tech-track">
+            <div class="tech-item"><span class="tech-badge">HTML5</span></div>
+            <div class="tech-item"><span class="tech-badge">CSS3</span></div>
+            <div class="tech-item"><span class="tech-badge">JavaScript</span></div>
+            <div class="tech-item"><span class="tech-badge">React</span></div>
+            <div class="tech-item"><span class="tech-badge">Node.js</span></div>
+            <div class="tech-item"><span class="tech-badge">Git & GitHub</span></div>
+            <div class="tech-item"><span class="tech-badge">Netlify</span></div>
+            <div class="tech-item"><span class="tech-badge">HTML5</span></div>
+            <div class="tech-item"><span class="tech-badge">CSS3</span></div>
+            <div class="tech-item"><span class="tech-badge">JavaScript</span></div>
+            <div class="tech-item"><span class="tech-badge">React</span></div>
+            <div class="tech-item"><span class="tech-badge">Node.js</span></div>
+            <div class="tech-item"><span class="tech-badge">Git & GitHub</span></div>
+            <div class="tech-item"><span class="tech-badge">Netlify</span></div>
+        </div>
+    </section>
+
+    <section class="services" id="servicios">
+        <div class="container">
+            <div class="section-header">
+                <h2>Nuestras <span class="text-gradient">Soluciones</span></h2>
+                <p>Todo lo que necesitas para destacar en el mundo digital.</p>
+            </div>
+            <div class="services-grid">
+
+                <div class="service-card">
+                    <div class="card-image-wrapper">
+                        <img src="imagenes/servicio_web.webp" alt="Desarrollo Web">
+                    </div>
+                    <div class="card-content">
+                        <h3>Desarrollo Web A Medida</h3>
+                        <p>Sitios web ultrarrápidos, seguros y programados desde cero para adaptarse perfectamente a las
+                            necesidades específicas de tu empresa.</p>
+                    </div>
+                </div>
+
+                <div class="service-card">
+                    <div class="card-image-wrapper">
+                        <img src="imagenes/servicio_ui.webp" alt="Diseño UI">
+                    </div>
+                    <div class="card-content">
+                        <h3>Diseño UI/UX</h3>
+                        <p>Creamos interfaces visualmente impactantes centradas en la experiencia del usuario. Diseños
+                            que no solo se ven bien, sino que venden.</p>
+                    </div>
+                </div>
+
+                <div class="service-card">
+                    <div class="card-image-wrapper">
+                        <img src="imagenes/servicio_seo.webp" alt="SEO y Posicionamiento">
+                    </div>
+                    <div class="card-content">
+                        <h3>SEO & Posicionamiento</h3>
+                        <p>Optimizamos tu sitio para que Google te ame. Estrategias para aparecer en los primeros
+                            lugares y atraer tráfico orgánico.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="experience" id="experiencia">
+        <div class="container exp-container">
+            <div class="exp-text">
+                <h2>Experiencia que genera <span class="text-gradient">Confianza</span></h2>
+                <p>En WebCenter no somos solo diseñadores, somos arquitectos digitales. Hemos trabajado con
+                    emprendedores para elevar su presencia en internet.</p>
+                <br>
+                <p>Nuestro enfoque se basa en la calidad del código, la estética moderna y el soporte continuo.</p>
+            </div>
+            <div class="stats-grid" id="stats-section">
+                <div class="stat-card">
+                    <span class="stat-number" data-target="2">0</span>
+                    <p>Sitios Lanzados</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" data-target="100">0</span>
+                    <p>Clientes Felices (%)</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" data-target="1">0</span>
+                    <p>Año de Innovación</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" data-target="24">0</span>
+                    <p>Horas Soporte (7/7)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="team" id="equipo">
+        <div class="container">
+            <div class="section-header">
+                <h2>Nuestro <span class="text-gradient">Equipo</span></h2>
+                <p>Talento humano detrás de la tecnología.</p>
+            </div>
+            <div class="team-grid">
+                <div class="team-member">
+                    <img src="imagenes/cristian.webp" alt="Cristian Ramírez Fernández">
+                    <h4>Cristian Ramírez Fernández</h4>
+                    <p class="team-role">Tecnólogo en ADSI</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contacto">
+        <div class="container">
+            <div class="section-header">
+                <h2>¿Listo para <span class="text-gradient">Despegar?</span></h2>
+            </div>
+            <div class="contact-wrapper">
+                <div class="contact-info">
+                    <h3>Hablemos</h3>
+                    <p>Cuéntanos sobre tu proyecto. Estamos listos para escuchar tus ideas y convertirlas en realidad.
+                    </p>
+                    <br>
+                    <div class="info-item">
+                        <div class="info-icon">📍</div>
+                        <span>Ibague, Tolima</span>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">📧</div>
+                        <span>cristian.ramirezfe@gmail.com</span>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">📱</div>
+                        <span>+57 3214595760</span>
+                    </div>
+                </div>
+
+                <form action="https://formsubmit.co/cristian.ramirezfe@gmail.com" method="POST">
+                    <input type="hidden" name="_subject" value="Nuevo Cliente WebCenter!">
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_template" value="table">
+
+                    <input type="text" name="nombre" placeholder="Tu Nombre o Empresa" required>
+                    <input type="email" name="email" placeholder="Tu Correo Electrónico" required>
+                    <input type="tel" name="telefono" placeholder="Teléfono" required>
+                    <textarea name="mensaje" rows="5" placeholder="Cuéntanos brevemente sobre tu proyecto..."
+                        required></textarea>
+
+                    <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                </form>
+
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 WebCenter. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <a href="https://wa.me/573214595760?text=Hola%20WebCenter,%20quisiera%20cotizar%20un%20sitio%20web." target="_blank"
+        class="whatsapp-btn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+    </a>
+
+    <script>
+        // 1. Efecto Barra Navegación
+        window.addEventListener('scroll', function () {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // 2. Animación Números
+        const counters = document.querySelectorAll('.stat-number');
+        const speed = 200;
+
+        const animateCounters = () => {
+            counters.forEach(counter => {
+                const updateCount = () => {
+                    const target = +counter.getAttribute('data-target');
+                    const count = +counter.innerText;
+                    const inc = target / speed;
+                    if (count < target) {
+                        counter.innerText = Math.ceil(count + (inc < 1 ? 1 : inc));
+                        setTimeout(updateCount, 40);
+                    } else {
+                        let suffix = target === 100 ? "%" : "";
+                        if (target > 10 && target !== 100) suffix = "+";
+                        if (target === 1 || target === 2) suffix = "";
+                        counter.innerText = target + suffix;
+                    }
+                };
+                updateCount();
+            });
+        };
+
+        let options = { root: null, threshold: 0.5 };
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, options);
+
+        observer.observe(document.getElementById('stats-section'));
+
+        // 3. LÓGICA DE USUARIO Y AUTENTICACIÓN PROPIA API
+        const userIcon = document.getElementById('user-icon');
+        const userDropdown = document.getElementById('user-dropdown');
+        const adPanelBtn = document.getElementById('adpanel-btn');
+        const authModal = document.getElementById('auth-modal');
+        const API_URL = 'https://webcenter-api.vercel.app/api';
+
+        if (window.location.protocol === 'https:' && API_URL.startsWith('http:')) {
+            console.error("ALERTA: Estás en una página HTTPS intentando conectar a una API HTTP. El navegador bloqueará la conexión por seguridad (Mixed Content).");
+            alert("Error de Seguridad: La página es HTTPS y la API es HTTP. Debes usar la página por HTTP o configurar SSL en el servidor.");
+        }
+
+        // Posicionar dropdown bajo el icono de usuario
+        userIcon.addEventListener('click', (e) => {
+            const token = localStorage.getItem('webcenter_token');
+            if (token) {
+                userDropdown.style.display = userDropdown.style.display === 'flex' ? 'none' : 'flex';
+                // Adjust position
+                const rect = userIcon.getBoundingClientRect();
+                userDropdown.style.top = (rect.bottom + 10) + 'px';
+                userDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+            } else {
+                openAuthModal();
+            }
+        });
+
+        // Ocultar dropdown al clickear fuera
+        window.addEventListener('click', (e) => {
+            if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.style.display = 'none';
+            }
+        });
+
+        function checkAuthStatus() {
+            const token = localStorage.getItem('webcenter_token');
+            const rol = localStorage.getItem('webcenter_rol');
+            const nombre = localStorage.getItem('webcenter_nombre');
+
+            if (token) {
+                userIcon.classList.add('user-logged-in');
+                userIcon.title = "Sesión iniciada: " + nombre;
+                if (rol === 'admin' || localStorage.getItem('webcenter_email') === 'cristian.ramirezfe@gmail.com') {
+                    adPanelBtn.style.display = "block";
+                    document.getElementById('btn-admin-panel').style.display = "block";
+                }
+            } else {
+                userIcon.classList.remove('user-logged-in');
+                adPanelBtn.style.display = "none";
+                document.getElementById('btn-admin-panel').style.display = "none";
+            }
+        }
+
+        function openAuthModal() {
+            authModal.style.display = "flex";
+            switchAuthMode('login');
+        }
+
+        function closeAuthModal() {
+            authModal.style.display = "none";
+            document.getElementById('auth-error').style.display = "none";
+        }
+
+        function switchAuthMode(mode) {
+            document.getElementById('auth-error').style.display = "none";
+            if (mode === 'login') {
+                document.getElementById('auth-title').innerText = "Iniciar Sesión";
+                document.getElementById('auth-form-login').style.display = "block";
+                document.getElementById('auth-form-register').style.display = "none";
+            } else {
+                document.getElementById('auth-title').innerText = "Crear Cuenta";
+                document.getElementById('auth-form-login').style.display = "none";
+                document.getElementById('auth-form-register').style.display = "block";
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Iniciando..."; btn.disabled = true;
+
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: email, password: pass })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('webcenter_token', data.token);
+                    localStorage.setItem('webcenter_rol', data.rol);
+                    localStorage.setItem('webcenter_nombre', data.nombre);
+                    localStorage.setItem('webcenter_id', data.id);
+                    localStorage.setItem('webcenter_email', email);
+                    closeAuthModal();
+                    checkAuthStatus();
+                } else {
+                    showAuthError(data.error || "Error al iniciar sesión");
+                }
+            } catch (err) {
+                showAuthError("Error de conexión con el servidor.");
+            } finally {
+                btn.innerText = "Entrar"; btn.disabled = false;
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Creando..."; btn.disabled = true;
+
+            const nombre = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            try {
+                const res = await fetch(`${API_URL}/registro`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_completo: nombre, username: email, password: pass })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Auto login después del registro
+                    document.getElementById('login-email').value = email;
+                    document.getElementById('login-pass').value = pass;
+                    switchAuthMode('login');
+                    document.getElementById('auth-form-login').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                } else {
+                    showAuthError(data.error || "Error al registrarse");
+                }
+            } catch (err) {
+                showAuthError("Error de conexión con el servidor.");
+            } finally {
+                btn.innerText = "Crear Cuenta"; btn.disabled = false;
+            }
+        }
+
+        function showAuthError(msg) {
+            const errEl = document.getElementById('auth-error');
+            errEl.innerText = msg;
+            errEl.style.display = "block";
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('webcenter_token');
+            localStorage.removeItem('webcenter_rol');
+            localStorage.removeItem('webcenter_nombre');
+            localStorage.removeItem('webcenter_email');
+            userDropdown.style.display = 'none';
+            checkAuthStatus();
+        }
+
+        // Ejecutar al cargar
+        checkAuthStatus();
+
+        // 4. LÓGICA DE MENÚ HAMBURGUESA (RESPONSIVE)
+        function toggleMenu() {
+            const nav = document.getElementById('nav-links');
+            nav.classList.toggle('active');
+        }
+
+        // 5. LÓGICA BÁSICA CARRITO (SOLO VISUALIZACIÓN EN INDEX)
+        let cart = JSON.parse(localStorage.getItem('webcenter_cart')) || [];
+        function updateCartBadge() {
+            const count = cart.reduce((acc, item) => acc + item.qty, 0);
+            document.getElementById('cart-count').innerText = count;
+
+            // Actualizar lista visual del sidebar
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotalEl = document.getElementById('cart-total-price');
+            cartItemsContainer.innerHTML = "";
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                const subtotal = item.priceNum * item.qty;
+                total += subtotal;
+                const formattedSubtotal = new Intl.NumberFormat('es-CO').format(subtotal);
+                cartItemsContainer.innerHTML += `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <h4>${item.name}</h4>
+                            <p>${item.qty} x ${item.priceStr}</p>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="color:var(--white); font-weight:bold;">$ ${formattedSubtotal}</div>
+                            <span class="cart-remove" onclick="removeFromCartIndex(${index})">Eliminar</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (cart.length === 0) cartItemsContainer.innerHTML = '<p style="color:#aaa; text-align:center; margin-top:20px;">Tu carrito está vacío.</p>';
+            cartTotalEl.innerText = "$ " + new Intl.NumberFormat('es-CO').format(total);
+        }
+
+        function toggleCart() {
+            document.getElementById('cart-sidebar').classList.toggle('open');
+        }
+
+        // Funciones auxiliares para checkout en Index
+        function removeFromCartIndex(index) {
+            cart.splice(index, 1);
+            localStorage.setItem('webcenter_cart', JSON.stringify(cart));
+            updateCartBadge();
+        }
+
+        function checkoutWhatsApp() {
+            if (cart.length === 0) { alert("El carrito está vacío"); return; }
+            let msg = "Hola Cristian, quiero comprar:\n\n";
+            let total = 0;
+            cart.forEach(item => {
+                const subtotal = item.priceNum * item.qty;
+                total += subtotal;
+                msg += `▪ ${item.name} (x${item.qty}) - $${new Intl.NumberFormat('es-CO').format(subtotal)}\n`;
+            });
+            msg += `\n*TOTAL: $ ${new Intl.NumberFormat('es-CO').format(total)}*`;
+            const url = `https://wa.me/573214595760?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        // --- LÓGICA MODO CLARO/OSCURO ---
+        const currentTheme = localStorage.getItem('webcenter_theme');
+        const themeIcon = document.getElementById('theme-icon');
+
+        if (currentTheme === 'light') {
+            document.body.classList.add('light-mode');
+            if (themeIcon) themeIcon.innerText = "🌙";
+        }
+
+        window.toggleTheme = () => {
+            document.body.classList.toggle('light-mode');
+
+            let theme = 'dark';
+
+            if (document.body.classList.contains('light-mode')) {
+                theme = 'light';
+                if (themeIcon) themeIcon.innerText = "🌙";
+            } else {
+                if (themeIcon) themeIcon.innerText = "☀️";
+            }
+            localStorage.setItem('webcenter_theme', theme);
+        };
+
+        // Inicializar badge
+        updateCartBadge();
+
+    </script>
+
+</body>
+
+</html>

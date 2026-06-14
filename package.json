@@ -7,14 +7,19 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "keywords": ["api", "tidb", "express"],
+  "keywords": [
+    "api",
+    "tidb",
+    "express"
+  ],
   "author": "Cristian Ramírez",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "mysql2": "^3.6.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.5.2",
+    "mysql2": "^3.6.0"
   },
   "engines": {
     "node": "18.x"

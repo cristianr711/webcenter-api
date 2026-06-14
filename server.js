@@ -2,13 +2,15 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 const crypto = require('crypto');
+const fileUpload = require('express-fileupload');
 require('dotenv').config();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 } })); // 50MB max
 
 // Configuración BD
 const dbConfig = {
@@ -120,8 +122,15 @@ app.get('/api/productos', async (req, res) => {
             LEFT JOIN proveedores pv ON p.id_proveedor = pv.id_proveedor
             WHERE p.activo = 1
         `);
+        
+        // Convertir imágenes a base64
+        const dataConImagenes = data.map(p => ({
+            ...p,
+            imagen_principal: p.imagen_principal ? 'data:' + (p.imagen_mime || 'image/jpeg') + ';base64,' + p.imagen_principal.toString('base64') : null
+        }));
+        
         conn.release();
-        res.json(data);
+        res.json(dataConImagenes);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -129,15 +138,50 @@ app.get('/api/productos', async (req, res) => {
 
 app.post('/api/productos', async (req, res) => {
     try {
-        const { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
+        // Soportar tanto JSON como FormData
+        let { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
+        let imagen_principal = null;
+        let imagen_mime = null;
+        
+        // Si viene un archivo, procesarlo
+        if (req.files && req.files.imagenes) {
+            const archivo = Array.isArray(req.files.imagenes) ? req.files.imagenes[0] : req.files.imagenes;
+            imagen_principal = archivo.data; // Buffer con la imagen
+            imagen_mime = archivo.mimetype || 'image/jpeg';
+        }
+        
+        // Valores por defecto
+        const precio_c = precio_compra || precio_venta || 0;
+        const stock_m = stock_minimo || 5;
+        const cat_final = id_categoria || 120001;
+        
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
-            'INSERT INTO productos (nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
-            [nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor]
+            'INSERT INTO productos (nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, imagen_principal, imagen_mime, activo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())',
+            [nombre || '', descripcion || '', precio_venta || 0, precio_c, stock_actual || 0, stock_m, cat_final, id_proveedor || null, imagen_principal, imagen_mime]
         );
         conn.release();
-        res.status(201).json({ id_producto: result.insertId });
+        res.status(201).json({ id_producto: result.insertId, mensaje: 'Producto creado' });
     } catch (err) {
+        console.error('❌ Error POST productos:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/productos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor } = req.body;
+        
+        const conn = await pool.getConnection();
+        await conn.execute(
+            'UPDATE productos SET nombre = ?, descripcion = ?, precio_venta = ?, precio_compra = ?, stock_actual = ?, stock_minimo = ?, id_categoria = ?, id_proveedor = ?, updated_at = NOW() WHERE id_producto = ?',
+            [nombre, descripcion, precio_venta, precio_compra, stock_actual, stock_minimo, id_categoria, id_proveedor, id]
+        );
+        conn.release();
+        res.json({ mensaje: 'Producto actualizado' });
+    } catch (err) {
+        console.error('Error PUT productos:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -291,6 +335,112 @@ app.post('/api/compras', async (req, res) => {
         conn.release();
         res.status(201).json({ id_compra });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== HISTORIAL DE PRECIOS =====================
+app.get('/api/historial-precios', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute(`
+            SELECT h.*, p.nombre as nombre_producto, u.nombre_completo as nombre_usuario
+            FROM historial_precios h
+            LEFT JOIN productos p ON h.id_producto = p.id_producto
+            LEFT JOIN usuarios u ON h.id_usuario = u.id_usuario
+            ORDER BY h.fecha_cambio DESC
+            LIMIT 100
+        `);
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/historial-precios', async (req, res) => {
+    try {
+        const { id_producto, precio_anterior, precio_nuevo, id_usuario } = req.body;
+        
+        if (!id_producto || precio_anterior === undefined || precio_nuevo === undefined) {
+            return res.status(400).json({ error: 'Faltan campos requeridos' });
+        }
+
+        const conn = await pool.getConnection();
+        const [result] = await conn.execute(
+            'INSERT INTO historial_precios (id_producto, precio_anterior, precio_nuevo, id_usuario, fecha_cambio) VALUES (?, ?, ?, ?, NOW())',
+            [id_producto, precio_anterior, precio_nuevo, id_usuario || null]
+        );
+        conn.release();
+        res.status(201).json({ id_historial: result.insertId });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===================== FACTURAS =====================
+app.get('/api/facturas', async (req, res) => {
+    try {
+        const conn = await pool.getConnection();
+        const [data] = await conn.execute(`
+            SELECT f.*, c.nombre_completo as nombre_cliente
+            FROM facturas f
+            LEFT JOIN clientes c ON f.id_cliente = c.id_cliente
+            ORDER BY f.fecha_emision DESC
+            LIMIT 100
+        `);
+        conn.release();
+        res.json(data);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/facturas', async (req, res) => {
+    try {
+        const { id_cliente, id_usuario, numero_factura, subtotal, impuesto, total, metodo_pago, productos } = req.body;
+
+        if (!id_cliente || !numero_factura || !productos || productos.length === 0) {
+            return res.status(400).json({ error: 'Faltan campos requeridos' });
+        }
+
+        const conn = await pool.getConnection();
+        
+        try {
+            // Iniciar transacción
+            await conn.beginTransaction();
+
+            // Insertar factura
+            const [result] = await conn.execute(
+                'INSERT INTO facturas (id_cliente, id_usuario, numero_factura, subtotal, impuesto, total, metodo_pago, estado_factura, fecha_emision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+                [id_cliente, id_usuario || null, numero_factura, subtotal, impuesto, total, metodo_pago || 'efectivo', 'emitida']
+            );
+
+            const id_factura = result.insertId;
+
+            // Insertar detalles de factura
+            for (const item of productos) {
+                const subtotal_item = item.precio * item.cantidad;
+                await conn.execute(
+                    'INSERT INTO detalles_factura (id_factura, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [id_factura, item.id_producto, item.cantidad, item.precio, subtotal_item]
+                );
+            }
+
+            // Confirmar transacción
+            await conn.commit();
+            conn.release();
+            res.status(201).json({ id_factura, numero_factura });
+        } catch (err) {
+            await conn.rollback();
+            conn.release();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Error:', err);
         res.status(500).json({ error: err.message });
     }
 });
