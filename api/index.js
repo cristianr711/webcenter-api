@@ -327,14 +327,14 @@ app.post('/api/usuarios', async (req, res) => {
     try {
         const { nombre_completo, username, email, password, id_rol } = req.body;
         
-        if (!nombre_completo || !username || !email) {
+        if (!nombre_completo || !username) {
             return res.status(400).json({ error: 'Faltan campos requeridos' });
         }
 
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
             'INSERT INTO usuarios (nombre_completo, username, email, password, id_rol, activo, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
-            [nombre_completo, username, email, password || 'password123', id_rol || 2]
+            [nombre_completo, username, email || username, password || 'password123', id_rol || 2]
         );
         conn.release();
         res.status(201).json({ id_usuario: result.insertId, mensaje: 'Usuario creado' });
@@ -351,7 +351,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
         const conn = await pool.getConnection();
         await conn.execute(
             'UPDATE usuarios SET nombre_completo = ?, username = ?, email = ?, password = ?, id_rol = ? WHERE id_usuario = ?',
-            [nombre_completo || '', username || '', email || '', password || '', id_rol || 2, id]
+            [nombre_completo || '', username || '', email || username || '', password || '', id_rol || 2, id]
         );
         conn.release();
         res.json({ mensaje: 'Usuario actualizado' });
