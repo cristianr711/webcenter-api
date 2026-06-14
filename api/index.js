@@ -108,6 +108,19 @@ app.put('/api/productos/:id', async (req, res) => {
     }
 });
 
+app.post('/api/productos/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        await conn.execute('UPDATE productos SET activo = 0 WHERE id_producto = ?', [id]);
+        conn.release();
+        res.json({ mensaje: 'Producto eliminado' });
+    } catch (err) {
+        console.error('Error DELETE productos:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/productos/:id/imagen', async (req, res) => {
     try {
         const { id } = req.params;
@@ -171,6 +184,19 @@ app.put('/api/categorias/:id', async (req, res) => {
     }
 });
 
+app.post('/api/categorias/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        await conn.execute('UPDATE categorias SET activo = 0 WHERE id_categoria = ?', [id]);
+        conn.release();
+        res.json({ mensaje: 'Categoría eliminada' });
+    } catch (err) {
+        console.error('Error DELETE categorias:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // CLIENTES
 app.get('/api/clientes', async (req, res) => {
     try {
@@ -212,6 +238,19 @@ app.put('/api/clientes/:id', async (req, res) => {
         res.json({ mensaje: 'Cliente actualizado' });
     } catch (err) {
         console.error('Error PUT clientes:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/clientes/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        await conn.execute('UPDATE clientes SET activo = 0 WHERE id_cliente = ?', [id]);
+        conn.release();
+        res.json({ mensaje: 'Cliente eliminado' });
+    } catch (err) {
+        console.error('Error DELETE clientes:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -259,6 +298,19 @@ app.put('/api/proveedores/:id', async (req, res) => {
     }
 });
 
+app.post('/api/proveedores/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        await conn.execute('UPDATE proveedores SET activo = 0 WHERE id_proveedor = ?', [id]);
+        conn.release();
+        res.json({ mensaje: 'Proveedor eliminado' });
+    } catch (err) {
+        console.error('Error DELETE proveedores:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // USUARIOS
 app.get('/api/usuarios', async (req, res) => {
     try {
@@ -267,6 +319,19 @@ app.get('/api/usuarios', async (req, res) => {
         conn.release();
         res.json(data);
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/usuarios/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        await conn.execute('UPDATE usuarios SET activo = 0 WHERE id_usuario = ?', [id]);
+        conn.release();
+        res.json({ mensaje: 'Usuario eliminado' });
+    } catch (err) {
+        console.error('Error DELETE usuarios:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -385,6 +450,94 @@ app.get('/api/compras', async (req, res) => {
     }
 });
 
+app.post('/api/compras', async (req, res) => {
+    try {
+        const { id_proveedor, id_usuario, numero_factura, productos, total } = req.body;
+
+        if (!id_proveedor || !numero_factura || !productos || productos.length === 0) {
+            return res.status(400).json({ error: 'Faltan campos requeridos' });
+        }
+
+        const conn = await pool.getConnection();
+        
+        try {
+            await conn.beginTransaction();
+            const [result] = await conn.execute(
+                'INSERT INTO compras (id_proveedor, id_usuario, numero_factura, total, fecha_compra) VALUES (?, ?, ?, ?, NOW())',
+                [id_proveedor, id_usuario || null, numero_factura, total || 0]
+            );
+
+            const id_compra = result.insertId;
+
+            for (const item of productos) {
+                const subtotal_item = item.cantidad * (item.precio_compra || item.precio_venta);
+                await conn.execute(
+                    'INSERT INTO detalles_compra (id_compra, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [id_compra, item.id_producto, item.cantidad, item.precio_compra || item.precio_venta, subtotal_item]
+                );
+                
+                // Actualizar stock del producto
+                await conn.execute(
+                    'UPDATE productos SET stock_actual = stock_actual + ? WHERE id_producto = ?',
+                    [item.cantidad, item.id_producto]
+                );
+            }
+
+            await conn.commit();
+            conn.release();
+            res.status(201).json({ id_compra, numero_factura });
+        } catch (err) {
+            await conn.rollback();
+            conn.release();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Error POST compras:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/compras/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        
+        try {
+            await conn.beginTransaction();
+            
+            // Restaurar stock de los productos
+            const [detalles] = await conn.execute(
+                'SELECT id_producto, cantidad FROM detalles_compra WHERE id_compra = ?',
+                [id]
+            );
+            
+            for (const detalle of detalles) {
+                await conn.execute(
+                    'UPDATE productos SET stock_actual = stock_actual - ? WHERE id_producto = ?',
+                    [detalle.cantidad, detalle.id_producto]
+                );
+            }
+            
+            // Eliminar detalles
+            await conn.execute('DELETE FROM detalles_compra WHERE id_compra = ?', [id]);
+            
+            // Eliminar compra
+            await conn.execute('DELETE FROM compras WHERE id_compra = ?', [id]);
+            
+            await conn.commit();
+            conn.release();
+            res.json({ mensaje: 'Compra eliminada' });
+        } catch (err) {
+            await conn.rollback();
+            conn.release();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Error DELETE compras:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // VENTAS
 app.get('/api/ventas', async (req, res) => {
     try {
@@ -398,6 +551,95 @@ app.get('/api/ventas', async (req, res) => {
         conn.release();
         res.json(data);
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/ventas', async (req, res) => {
+    try {
+        const { id_cliente, id_usuario, productos, total, metodo_pago } = req.body;
+
+        if (!id_cliente || !productos || productos.length === 0) {
+            return res.status(400).json({ error: 'Faltan campos requeridos' });
+        }
+
+        const conn = await pool.getConnection();
+        
+        try {
+            await conn.beginTransaction();
+            const numero_factura = `VNT-${Date.now()}`;
+            const [result] = await conn.execute(
+                'INSERT INTO facturas (id_cliente, id_usuario, numero_factura, total, metodo_pago, estado_factura, fecha_emision) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                [id_cliente, id_usuario || null, numero_factura, total || 0, metodo_pago || 'efectivo', 'emitida']
+            );
+
+            const id_factura = result.insertId;
+
+            for (const item of productos) {
+                const subtotal_item = item.cantidad * item.precio_venta;
+                await conn.execute(
+                    'INSERT INTO detalles_factura (id_factura, id_producto, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [id_factura, item.id_producto, item.cantidad, item.precio_venta, subtotal_item]
+                );
+                
+                // Actualizar stock del producto
+                await conn.execute(
+                    'UPDATE productos SET stock_actual = stock_actual - ? WHERE id_producto = ?',
+                    [item.cantidad, item.id_producto]
+                );
+            }
+
+            await conn.commit();
+            conn.release();
+            res.status(201).json({ id_venta: id_factura, numero_factura });
+        } catch (err) {
+            await conn.rollback();
+            conn.release();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Error POST ventas:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/ventas/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conn = await pool.getConnection();
+        
+        try {
+            await conn.beginTransaction();
+            
+            // Restaurar stock de los productos
+            const [detalles] = await conn.execute(
+                'SELECT id_producto, cantidad FROM detalles_factura WHERE id_factura = ?',
+                [id]
+            );
+            
+            for (const detalle of detalles) {
+                await conn.execute(
+                    'UPDATE productos SET stock_actual = stock_actual + ? WHERE id_producto = ?',
+                    [detalle.cantidad, detalle.id_producto]
+                );
+            }
+            
+            // Eliminar detalles
+            await conn.execute('DELETE FROM detalles_factura WHERE id_factura = ?', [id]);
+            
+            // Marcar factura como cancelada/eliminada
+            await conn.execute('UPDATE facturas SET estado_factura = ? WHERE id_factura = ?', ['cancelada', id]);
+            
+            await conn.commit();
+            conn.release();
+            res.json({ mensaje: 'Venta eliminada' });
+        } catch (err) {
+            await conn.rollback();
+            conn.release();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Error DELETE ventas:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
