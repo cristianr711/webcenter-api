@@ -121,6 +121,7 @@ app.get('/api/productos', async (req, res) => {
             LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
             LEFT JOIN proveedores pv ON p.id_proveedor = pv.id_proveedor
             WHERE p.activo = 1
+            ORDER BY p.nombre
         `);
         
         conn.release();
